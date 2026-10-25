@@ -755,7 +755,10 @@ $timer.Interval = [TimeSpan]::FromSeconds(1)
 $timer.Add_Tick({
     Receive-Jobs
     Receive-UpdateCheck
-    if (-not $script:updTask -and ((Get-Date) - $script:updCheckedAt).TotalHours -ge 6) { Start-UpdateCheck }
+    # Every six hours; every ten minutes while the notice is showing, because GitHub's raw files are cached for a few minutes
+    # and a freshly pushed version can look "new" to a widget that already has it
+    $wait = if ($script:updateAvailable) { 10 } else { 360 }
+    if (-not $script:updTask -and ((Get-Date) - $script:updCheckedAt).TotalMinutes -ge $wait) { Start-UpdateCheck }
     $script:tick++; $script:since++
     $busy = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' }).Count -gt 0
     $every = if ($busy) { 10 } else { 30 }
