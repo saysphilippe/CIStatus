@@ -1,8 +1,9 @@
 # CI Status installer - installs the widget, adds Desktop + Startup shortcuts, and starts it.
 # From a downloaded copy:  powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
-# From GitHub (private repo, needs gh):  gh api repos/saysphilippe/CIStatus/contents/install.ps1 -H "Accept: application/vnd.github.raw" | iex
+# From GitHub:  irm https://raw.githubusercontent.com/saysphilippe/CIStatus/main/install.ps1 | iex
 # Keep this file ASCII-only: Invoke-Expression chokes on a UTF-8 BOM, so Nordic letters are built with [char].
 $ErrorActionPreference = 'Stop'
+$base = 'https://raw.githubusercontent.com/saysphilippe/CIStatus/main'
 $dest = Join-Path $env:LOCALAPPDATA 'CIStatus'
 $cfgPath = Join-Path $dest 'config.json'
 $ae = [char]0xE6; $oe = [char]0xF8; $aa = [char]0xE5; $auml = [char]0xE4; $ouml = [char]0xF6
@@ -44,15 +45,7 @@ Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
 New-Item -ItemType Directory -Force $dest | Out-Null
 foreach ($f in 'CIStatus.ps1', 'Launch.vbs', 'uninstall.ps1') {
     if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot $f))) { Copy-Item (Join-Path $PSScriptRoot $f) (Join-Path $dest $f) -Force }
-    else {
-        # The repo is private: fetch through gh instead of raw.githubusercontent.com
-        $gh = 'C:\Program Files\GitHub CLI\gh.exe'; if (-not (Test-Path $gh)) { $gh = 'gh' }
-        [Console]::OutputEncoding = [Text.Encoding]::UTF8
-        $txt = (& $gh api "repos/saysphilippe/CIStatus/contents/$f" -H 'Accept: application/vnd.github.raw') -join "`r`n"
-        $txt = $txt.TrimStart([char]0xFEFF)
-        # The widget needs a BOM (Nordic letters); the .vbs must not have one
-        [IO.File]::WriteAllText((Join-Path $dest $f), $txt, (New-Object Text.UTF8Encoding ($f -eq 'CIStatus.ps1')))
-    }
+    else { Invoke-WebRequest "$base/$f" -OutFile (Join-Path $dest $f) -UseBasicParsing }
 }
 $cfg | ConvertTo-Json | Set-Content $cfgPath -Encoding UTF8
 

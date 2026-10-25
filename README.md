@@ -24,11 +24,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 or double-click `Install.cmd`. The installer asks for a language (set `CISTATUS_LANG` to `en`, `no`, `sv` or `da` to skip the question), installs to `%LOCALAPPDATA%\CIStatus`, adds a **CI Status** shortcut on the Desktop and in Startup, and starts the widget. Settings are kept when you install again.
 
-This repository is private, so the "Update the widget" menu item fetches the installer through `gh`:
+You do not need `install.ps1` on disk: install or update straight from GitHub with
 
 ```powershell
-gh api repos/saysphilippe/CIStatus/contents/install.ps1 -H "Accept: application/vnd.github.raw" | iex
+irm https://raw.githubusercontent.com/saysphilippe/CIStatus/main/install.ps1 | iex
 ```
+
+The widget also checks GitHub for a newer version at start-up and every six hours (it compares itself with `CIStatus.ps1` on the `main` branch). When there is one, an amber line **New version available – click to update** appears at the bottom; clicking it, or *Update the widget* in the right-click menu, runs the installer above and restarts the widget with your settings kept.
 
 ## Use
 

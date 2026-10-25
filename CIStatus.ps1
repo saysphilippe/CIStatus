@@ -1,7 +1,8 @@
 ﻿# CI Status - desktop widget that shows the state of GitHub Actions runs (read through the GitHub CLI, gh)
-Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Microsoft.VisualBasic
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Microsoft.VisualBasic, System.Net.Http
 
 $dir     = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptPath = $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
@@ -27,6 +28,7 @@ $strings = @{
         mQuota = 'Set minutes quota…'; mBudget = 'Set monthly budget…'; badNum = 'Enter a number, for example 3000.'
         askQuota = 'Monthly quota in Actions minutes (0 = what the plan includes):'; askBudget = 'Monthly budget in USD (0 = no budget):'
         uDailyFor = '{0} · {1} per day'; uNoDaily = '{0} · no daily data'; mBudgets = 'Budget per service'; askBudgetFor = 'Monthly budget in USD for {0} (0 = none):'
+        updNew = 'New version available – click to update'
         tabRuns = 'Runs'; tabUsage = 'Usage'; linkUsage = 'Open GitHub usage ↗'; uServices = 'All services'; uNoUse = 'no usage'; catAI = 'AI credits'; catOther = 'Other'
         uHead = 'Actions minutes · {0}'; uUsed = '{0} min used of {1} included'; uOver = 'Included minutes are used up – {0} min billable ({1})'
         uOk = 'Nothing billable this month'; uFore = 'Forecast for the month: about {0} min'; uForeCost = ' · about {0} billable'
@@ -49,6 +51,7 @@ $strings = @{
         mQuota = 'Sett kvote i minutter…'; mBudget = 'Sett månedlig budsjett…'; badNum = 'Skriv et tall, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedlig budsjett i USD (0 = ingen budsjett):'
         uDailyFor = '{0} · {1} per dag'; uNoDaily = '{0} · ingen data per dag'; mBudgets = 'Budsjett per tjeneste'; askBudgetFor = 'Månedlig budsjett i USD for {0} (0 = ingen):'
+        updNew = 'Ny versjon tilgjengelig – trykk for å oppdatere'
         tabRuns = 'Kjøringer'; tabUsage = 'Forbruk'; linkUsage = 'Åpne GitHub-forbruk ↗'; uServices = 'Alle tjenester'; uNoUse = 'ingen bruk'; catAI = 'AI-kreditter'; catOther = 'Annet'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brukt av {1} inkludert'; uOver = 'Inkluderte minutter er brukt opp – {0} min å betale for ({1})'
         uOk = 'Ingenting å betale denne måneden'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} å betale'
@@ -71,6 +74,7 @@ $strings = @{
         mQuota = 'Ange kvot i minuter…'; mBudget = 'Ange månadsbudget…'; badNum = 'Skriv ett tal, till exempel 3000.'
         askQuota = 'Månatlig kvot i Actions-minuter (0 = det planen inkluderar):'; askBudget = 'Månatlig budget i USD (0 = ingen budget):'
         uDailyFor = '{0} · {1} per dag'; uNoDaily = '{0} · inga data per dag'; mBudgets = 'Budget per tjänst'; askBudgetFor = 'Månatlig budget i USD för {0} (0 = ingen):'
+        updNew = 'Ny version tillgänglig – klicka för att uppdatera'
         tabRuns = 'Körningar'; tabUsage = 'Förbrukning'; linkUsage = 'Öppna GitHub-förbrukning ↗'; uServices = 'Alla tjänster'; uNoUse = 'ingen användning'; catAI = 'AI-krediter'; catOther = 'Övrigt'
         uHead = 'Actions-minuter · {0}'; uUsed = '{0} min använda av {1} inkluderade'; uOver = 'Inkluderade minuter är slut – {0} min att betala för ({1})'
         uOk = 'Inget att betala den här månaden'; uFore = 'Prognos för månaden: ca {0} min'; uForeCost = ' · ca {0} att betala'
@@ -93,6 +97,7 @@ $strings = @{
         mQuota = 'Sæt kvote i minutter…'; mBudget = 'Sæt månedligt budget…'; badNum = 'Skriv et tal, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedligt budget i USD (0 = intet budget):'
         uDailyFor = '{0} · {1} pr. dag'; uNoDaily = '{0} · ingen data pr. dag'; mBudgets = 'Budget pr. tjeneste'; askBudgetFor = 'Månedligt budget i USD for {0} (0 = ingen):'
+        updNew = 'Ny version tilgængelig – klik for at opdatere'
         tabRuns = 'Kørsler'; tabUsage = 'Forbrug'; linkUsage = 'Åbn GitHub-forbrug ↗'; uServices = 'Alle tjenester'; uNoUse = 'intet forbrug'; catAI = 'AI-kreditter'; catOther = 'Andet'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brugt af {1} inkluderet'; uOver = 'Inkluderede minutter er brugt op – {0} min at betale for ({1})'
         uOk = 'Intet at betale denne måned'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} at betale'
@@ -218,6 +223,7 @@ function Format-Dur($ts) {
       </StackPanel>
       <TextBlock Name="upd" Foreground="#666" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"/>
       <TextBlock Name="usageLink" Foreground="#6A9BCC" FontSize="12" Margin="0,4,0,0" Cursor="Hand" HorizontalAlignment="Left" Background="Transparent" TextDecorations="Underline" Tag="https://github.com/settings/billing/summary"/>
+      <TextBlock Name="updNew" Foreground="#E0B050" FontSize="12" Margin="0,6,0,0" Cursor="Hand" HorizontalAlignment="Left" Background="Transparent" TextDecorations="Underline" Visibility="Collapsed" Tag="cmd:update"/>
     </StackPanel>
   </Border>
   </Grid>
@@ -225,7 +231,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -436,6 +442,40 @@ function Render-Usage {
     }
 }
 
+# ---------- updates ----------
+function Start-Update {
+    $l = if ($cfg.language -in @('en', 'no', 'sv', 'da')) { $cfg.language } else { 'en' }
+    $c = "`$env:CISTATUS_LANG = '$l'; irm https://raw.githubusercontent.com/saysphilippe/CIStatus/main/install.ps1 | iex"
+    Start-Process powershell.exe -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $c
+}
+# The widget compares itself with the file on GitHub (ignoring line endings and BOM). A .NET task fetches it; the one-second timer picks it up.
+$script:updateAvailable = ($env:CISTATUS_FAKEUPDATE -eq '1')
+$script:updTask = $null
+$script:updCheckedAt = [datetime]::MinValue
+$script:http = $null
+function Get-NormHash($text) {
+    $sha = [Security.Cryptography.SHA256]::Create()
+    [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($text -replace "`r", '').TrimStart([char]0xFEFF))))
+}
+function Start-UpdateCheck {
+    if ($script:updTask -or -not $scriptPath -or $env:CISTATUS_FAKEUPDATE) { return }
+    if (-not $script:http) { $script:http = New-Object Net.Http.HttpClient; $script:http.Timeout = [TimeSpan]::FromSeconds(20) }
+    $script:updCheckedAt = Get-Date
+    $script:updTask = $script:http.GetStringAsync('https://raw.githubusercontent.com/saysphilippe/CIStatus/main/CIStatus.ps1?v=' + [guid]::NewGuid().ToString('N'))
+}
+function Receive-UpdateCheck {
+    if (-not $script:updTask -or -not $script:updTask.IsCompleted) { return }
+    $t = $script:updTask; $script:updTask = $null
+    if ($t.IsFaulted -or $t.IsCanceled) { return }
+    try {
+        $remote = Get-NormHash $t.Result
+        $local = Get-NormHash ([IO.File]::ReadAllText($scriptPath, [Text.Encoding]::UTF8))
+        $was = $script:updateAvailable
+        $script:updateAvailable = ($remote -ne $local)
+        if ($was -ne $script:updateAvailable) { Render }
+    } catch {}
+}
+
 function Show-Tab($t) {
     $cfg.tab = $t; Save-Config
     $el.runsPanel.Visibility = $(if ($t -eq 'runs') { 'Visible' } else { 'Collapsed' })
@@ -450,6 +490,7 @@ function Show-Tab($t) {
 function Render {
     $el.title.Text = T 'title'
     $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.usageLink.Text = T 'linkUsage'
+    $el.updNew.Text = T 'updNew'; $el.updNew.Visibility = $(if ($script:updateAvailable) { 'Visible' } else { 'Collapsed' })
     if ($cfg.tab -eq 'usage') { Render-Usage }
     $el.rows.Children.Clear()
     $running = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' })
@@ -667,11 +708,7 @@ $removeMenu.Add_SubmenuOpened({
     }
 })
 [void]$removeMenu.Items.Add((New-Object Windows.Controls.MenuItem))
-AddItem 'mUpdate' {
-    $l = if ($cfg.language -in @('en', 'no', 'sv', 'da')) { $cfg.language } else { 'en' }
-    $c = "`$env:CISTATUS_LANG = '$l'; gh api repos/saysphilippe/CIStatus/contents/install.ps1 -H 'Accept: application/vnd.github.raw' | iex"
-    Start-Process powershell.exe -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $c
-} | Out-Null
+AddItem 'mUpdate' { Start-Update } | Out-Null
 $top = AddItem 'mTopmost' { $win.Topmost = -not $win.Topmost; $this.IsChecked = $win.Topmost; $cfg.topmost = $win.Topmost; Save-Config }
 $top.IsChecked = $win.Topmost
 $langMenu = AddItem 'mLanguage' {}
@@ -703,6 +740,7 @@ $win.Add_MouseLeftButtonDown({
     if ([math]::Abs($win.Left - $l0) -lt 4 -and [math]::Abs($win.Top - $t0) -lt 4) {
         if ($act -eq 'cmd:min') { Set-Minimized $true }
         elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
+        elseif ($act -eq 'cmd:update') { Start-Update }
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
         elseif ($act -like 'cmd:svc:*') { $script:usageSel = $act -replace '^cmd:svc:', ''; $cfg.usageSel = $script:usageSel; Save-Config; Render }
         elseif ($act) { Start-Process $act }
@@ -716,6 +754,8 @@ $timer = New-Object Windows.Threading.DispatcherTimer
 $timer.Interval = [TimeSpan]::FromSeconds(1)
 $timer.Add_Tick({
     Receive-Jobs
+    Receive-UpdateCheck
+    if (-not $script:updTask -and ((Get-Date) - $script:updCheckedAt).TotalHours -ge 6) { Start-UpdateCheck }
     $script:tick++; $script:since++
     $busy = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' }).Count -gt 0
     $every = if ($busy) { 10 } else { 30 }
