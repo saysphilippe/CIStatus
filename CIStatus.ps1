@@ -22,7 +22,7 @@ $strings = @{
         uPaceOk = 'on track, forecast {0} % of the quota'; uMonthGone = 'Month {0} % gone'; uBudget = 'Budget: {0} of {1} ({2} %)'; uBudgetFore = ' · forecast {0}'
         mQuota = 'Set minutes quota…'; mBudget = 'Set monthly budget…'; badNum = 'Enter a number, for example 3000.'
         askQuota = 'Monthly quota in Actions minutes (0 = what the plan includes):'; askBudget = 'Monthly budget in USD (0 = no budget):'
-        tabRuns = 'Runs'; tabUsage = 'Usage'
+        tabRuns = 'Runs'; tabUsage = 'Usage'; linkUsage = 'Open GitHub usage ↗'
         uHead = 'Actions minutes · {0}'; uUsed = '{0} min used of {1} included'; uOver = 'Included minutes are used up – {0} min billable ({1})'
         uOk = 'Nothing billable this month'; uFore = 'Forecast for the month: about {0} min'; uForeCost = ' · about {0} billable'
         uDaily = 'Minutes per day'; uRepos = 'Per repository'; uOther = 'Other usage'; uTotal = 'Billable this month: {0}'; uResets = 'The month resets {0}'
@@ -43,7 +43,7 @@ $strings = @{
         uPaceOk = 'ligger godt an, prognose {0} % av kvoten'; uMonthGone = 'Måneden er {0} % gått'; uBudget = 'Budsjett: {0} av {1} ({2} %)'; uBudgetFore = ' · prognose {0}'
         mQuota = 'Sett kvote i minutter…'; mBudget = 'Sett månedlig budsjett…'; badNum = 'Skriv et tall, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedlig budsjett i USD (0 = ingen budsjett):'
-        tabRuns = 'Kjøringer'; tabUsage = 'Forbruk'
+        tabRuns = 'Kjøringer'; tabUsage = 'Forbruk'; linkUsage = 'Åpne GitHub-forbruk ↗'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brukt av {1} inkludert'; uOver = 'Inkluderte minutter er brukt opp – {0} min å betale for ({1})'
         uOk = 'Ingenting å betale denne måneden'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} å betale'
         uDaily = 'Minutter per dag'; uRepos = 'Per repo'; uOther = 'Annet forbruk'; uTotal = 'Å betale denne måneden: {0}'; uResets = 'Måneden nullstilles {0}'
@@ -64,7 +64,7 @@ $strings = @{
         uPaceOk = 'ligger bra till, prognos {0} % av kvoten'; uMonthGone = 'Månaden är {0} % förbi'; uBudget = 'Budget: {0} av {1} ({2} %)'; uBudgetFore = ' · prognos {0}'
         mQuota = 'Ange kvot i minuter…'; mBudget = 'Ange månadsbudget…'; badNum = 'Skriv ett tal, till exempel 3000.'
         askQuota = 'Månatlig kvot i Actions-minuter (0 = det planen inkluderar):'; askBudget = 'Månatlig budget i USD (0 = ingen budget):'
-        tabRuns = 'Körningar'; tabUsage = 'Förbrukning'
+        tabRuns = 'Körningar'; tabUsage = 'Förbrukning'; linkUsage = 'Öppna GitHub-förbrukning ↗'
         uHead = 'Actions-minuter · {0}'; uUsed = '{0} min använda av {1} inkluderade'; uOver = 'Inkluderade minuter är slut – {0} min att betala för ({1})'
         uOk = 'Inget att betala den här månaden'; uFore = 'Prognos för månaden: ca {0} min'; uForeCost = ' · ca {0} att betala'
         uDaily = 'Minuter per dag'; uRepos = 'Per repo'; uOther = 'Annan förbrukning'; uTotal = 'Att betala den här månaden: {0}'; uResets = 'Månaden nollställs {0}'
@@ -85,7 +85,7 @@ $strings = @{
         uPaceOk = 'ligger godt, prognose {0} % af kvoten'; uMonthGone = 'Måneden er {0} % gået'; uBudget = 'Budget: {0} af {1} ({2} %)'; uBudgetFore = ' · prognose {0}'
         mQuota = 'Sæt kvote i minutter…'; mBudget = 'Sæt månedligt budget…'; badNum = 'Skriv et tal, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedligt budget i USD (0 = intet budget):'
-        tabRuns = 'Kørsler'; tabUsage = 'Forbrug'
+        tabRuns = 'Kørsler'; tabUsage = 'Forbrug'; linkUsage = 'Åbn GitHub-forbrug ↗'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brugt af {1} inkluderet'; uOver = 'Inkluderede minutter er brugt op – {0} min at betale for ({1})'
         uOk = 'Intet at betale denne måned'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} at betale'
         uDaily = 'Minutter pr. dag'; uRepos = 'Pr. repo'; uOther = 'Andet forbrug'; uTotal = 'At betale denne måned: {0}'; uResets = 'Måneden nulstilles {0}'
@@ -224,6 +224,7 @@ function Format-Dur($ts) {
         <TextBlock Name="uNote" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
       </StackPanel>
       <TextBlock Name="upd" Foreground="#666" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"/>
+      <TextBlock Name="usageLink" Foreground="#6A9BCC" FontSize="12" Margin="0,4,0,0" Cursor="Hand" HorizontalAlignment="Left" Background="Transparent" TextDecorations="Underline" Tag="https://github.com/settings/billing/summary"/>
     </StackPanel>
   </Border>
   </Grid>
@@ -231,7 +232,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'runsPanel', 'usagePanel', 'uHead', 'uTrack', 'uUsedBar', 'uPace', 'uSub', 'uPaceTxt', 'uCost', 'uTrack2', 'uUsedBar2', 'uPace2', 'uMoney', 'uFore', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'runsPanel', 'usagePanel', 'uHead', 'uTrack', 'uUsedBar', 'uPace', 'uSub', 'uPaceTxt', 'uCost', 'uTrack2', 'uUsedBar2', 'uPace2', 'uMoney', 'uFore', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -417,7 +418,7 @@ function Show-Tab($t) {
 
 function Render {
     $el.title.Text = T 'title'
-    $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'
+    $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.usageLink.Text = T 'linkUsage'
     if ($cfg.tab -eq 'usage') { Render-Usage }
     $el.rows.Children.Clear()
     $running = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' })
