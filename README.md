@@ -5,8 +5,8 @@ A small always-on-top Windows desktop widget that shows the state of your GitHub
 - Latest runs across the repositories you watch, newest first, with a coloured dot: yellow = running (with elapsed time and `jobs done/total`), green = success, red = failed, grey = cancelled/skipped/queued.
 - Header summary: `N running`, `Failing` (the latest run of some workflow failed) or `All green`.
 - When a run that was running finishes, a line at the top announces it for a minute.
-- **Usage tab** (next to Runs): this month's GitHub Actions usage from the billing API (`gh api users/<you>/settings/billing/usage/summary`, needs the `user` scope on your `gh` login). A bar compares the minutes used with your quota, and a white marker shows how far through the month you are, so you can see at once whether you are ahead of or behind pace. Below it: what is billable, a forecast for the whole month (minutes and dollars), a bar chart of minutes per day, minutes per repository, and an **All services** list with one row per service, also when nothing was used: Actions, Packages, Git LFS, Codespaces and AI credits (all Copilot / premium request SKUs, read from the premium request report). Each row shows the quantities and what is billable; anything else GitHub reports ends up under Other. If you set a monthly budget, a second bar shows spending against it.
-- Quota and budget: GitHub does not give out budgets or spending limits for personal accounts through the API, so you enter them yourself (right-click, *Set minutes quota…* and *Set monthly budget…*, `0` clears). Without a quota the bar uses what the plan includes: exact once the included minutes are used up, otherwise `actionsIncluded` in `config.json` (default 2000). GitHub reports usage with a delay of an hour or more. A link at the bottom of the full widget opens your GitHub billing overview (github.com/settings/billing/summary).
+- **Usage tab** (next to Runs): this month's GitHub Actions usage from the billing API (`gh api users/<you>/settings/billing/usage/summary`, needs the `user` scope on your `gh` login). A bar compares the minutes used with your quota, and a white marker shows how far through the month you are, so you can see at once whether you are ahead of or behind pace. Below it: what is billable, a forecast for the whole month (minutes and dollars), and an **All services** list with one row per service, also when nothing was used: Actions, Packages, Git LFS, Codespaces and AI credits (all Copilot / premium request SKUs, read from the premium request report). Each row shows the quantities and what is billable against that service's monthly budget, with a small bar and the same month marker. **Click a row and the bar chart (usage per day, in the service's own unit) and the per-repository list switch to that service.** Anything else GitHub reports ends up under Other. 
+- Quota and budgets: GitHub does not give out budgets or spending limits for personal accounts through the API, so they are stored in the widget: the minutes quota (right-click, *Set minutes quota…*) and one monthly budget per service (*Budget per service*, `0` clears). The budgets start out as the ones on github.com/settings/billing/budgets when they were read on 2026-10-25: Actions $10, Packages $10, Git LFS $5, Codespaces $5, AI credits $5. Without a quota the bar uses what the plan includes: exact once the included minutes are used up, otherwise `actionsIncluded` in `config.json` (default 2000). GitHub reports usage with a delay of an hour or more. A link at the bottom of the full widget opens your GitHub billing overview (github.com/settings/billing/summary).
 - Minimize with the dash in the corner (or right-click, Minimize): a small pill that shows only the runs that are running, with elapsed time and jobs done. With nothing running it is a single dot, green (all green) or red (failing). Click the pill to bring the full list back; the pill remembers its own position.
 - Click a run to open it on GitHub. Drag the widget anywhere; the position is remembered.
 - Refreshes every 30 seconds, every 10 seconds while something is running.
@@ -39,14 +39,14 @@ Right-click the widget:
 | Refresh now | Reads GitHub right away |
 | Minimize | Shrinks to only what is running |
 | Set minutes quota… | Your monthly limit in Actions minutes, for the Usage tab |
-| Set monthly budget… | Your monthly budget in dollars, for the Usage tab |
+| Budget per service | Monthly budget in dollars for Actions, Packages, Git LFS, Codespaces and AI credits |
 | Add repository… | Watch another repository (`owner/name`) |
 | Remove repository | Stop watching one |
 | Update the widget | Installs the latest version from GitHub |
 | Always on top | Toggle |
 | Language | English / Norsk / Svenska / Dansk |
 
-By default it watches `saysphilippe/Nerdehagen`. The list, the number of runs per repository (`perRepo`, 5), the maximum number of rows (`maxRows`, 8), the quota (`quotaMinutes`) and the budget (`budgetUsd`) are stored in `%LOCALAPPDATA%\CIStatus\config.json`.
+By default it watches `saysphilippe/Nerdehagen`. The list, the number of runs per repository (`perRepo`, 5), the maximum number of rows (`maxRows`, 8), the quota (`quotaMinutes`), the budgets (`budgets`) and the selected service (`usageSel`) are stored in `%LOCALAPPDATA%\CIStatus\config.json`.
 
 ## Uninstall
 

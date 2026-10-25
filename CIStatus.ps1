@@ -5,10 +5,14 @@ $dir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
-$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgetUsd = $null }
+$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions' }
 if (Test-Path $cfgPath) {
     try { (Get-Content $cfgPath -Raw | ConvertFrom-Json).psobject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } } catch {}
 }
+# Monthly budgets in dollars per service; the defaults are the ones set on GitHub (Budgets and alerts)
+$b = [ordered]@{ Actions = 10; Packages = 10; 'Git LFS' = 5; Codespaces = 5; AI = 5 }
+if ($cfg.budgets -and $cfg.budgets -isnot [System.Collections.IDictionary]) { $cfg.budgets.PSObject.Properties | ForEach-Object { $b[$_.Name] = $_.Value } }
+$cfg.budgets = $b
 function Save-Config { $cfg | ConvertTo-Json | Set-Content $cfgPath -Encoding UTF8 }
 function Get-Repos { @($cfg.repos | Where-Object { $_ }) }
 
@@ -22,6 +26,7 @@ $strings = @{
         uPaceOk = 'on track, forecast {0} % of the quota'; uMonthGone = 'Month {0} % gone'; uBudget = 'Budget: {0} of {1} ({2} %)'; uBudgetFore = ' · forecast {0}'
         mQuota = 'Set minutes quota…'; mBudget = 'Set monthly budget…'; badNum = 'Enter a number, for example 3000.'
         askQuota = 'Monthly quota in Actions minutes (0 = what the plan includes):'; askBudget = 'Monthly budget in USD (0 = no budget):'
+        uDailyFor = '{0} · {1} per day'; uNoDaily = '{0} · no daily data'; mBudgets = 'Budget per service'; askBudgetFor = 'Monthly budget in USD for {0} (0 = none):'
         tabRuns = 'Runs'; tabUsage = 'Usage'; linkUsage = 'Open GitHub usage ↗'; uServices = 'All services'; uNoUse = 'no usage'; catAI = 'AI credits'; catOther = 'Other'
         uHead = 'Actions minutes · {0}'; uUsed = '{0} min used of {1} included'; uOver = 'Included minutes are used up – {0} min billable ({1})'
         uOk = 'Nothing billable this month'; uFore = 'Forecast for the month: about {0} min'; uForeCost = ' · about {0} billable'
@@ -43,6 +48,7 @@ $strings = @{
         uPaceOk = 'ligger godt an, prognose {0} % av kvoten'; uMonthGone = 'Måneden er {0} % gått'; uBudget = 'Budsjett: {0} av {1} ({2} %)'; uBudgetFore = ' · prognose {0}'
         mQuota = 'Sett kvote i minutter…'; mBudget = 'Sett månedlig budsjett…'; badNum = 'Skriv et tall, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedlig budsjett i USD (0 = ingen budsjett):'
+        uDailyFor = '{0} · {1} per dag'; uNoDaily = '{0} · ingen data per dag'; mBudgets = 'Budsjett per tjeneste'; askBudgetFor = 'Månedlig budsjett i USD for {0} (0 = ingen):'
         tabRuns = 'Kjøringer'; tabUsage = 'Forbruk'; linkUsage = 'Åpne GitHub-forbruk ↗'; uServices = 'Alle tjenester'; uNoUse = 'ingen bruk'; catAI = 'AI-kreditter'; catOther = 'Annet'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brukt av {1} inkludert'; uOver = 'Inkluderte minutter er brukt opp – {0} min å betale for ({1})'
         uOk = 'Ingenting å betale denne måneden'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} å betale'
@@ -64,6 +70,7 @@ $strings = @{
         uPaceOk = 'ligger bra till, prognos {0} % av kvoten'; uMonthGone = 'Månaden är {0} % förbi'; uBudget = 'Budget: {0} av {1} ({2} %)'; uBudgetFore = ' · prognos {0}'
         mQuota = 'Ange kvot i minuter…'; mBudget = 'Ange månadsbudget…'; badNum = 'Skriv ett tal, till exempel 3000.'
         askQuota = 'Månatlig kvot i Actions-minuter (0 = det planen inkluderar):'; askBudget = 'Månatlig budget i USD (0 = ingen budget):'
+        uDailyFor = '{0} · {1} per dag'; uNoDaily = '{0} · inga data per dag'; mBudgets = 'Budget per tjänst'; askBudgetFor = 'Månatlig budget i USD för {0} (0 = ingen):'
         tabRuns = 'Körningar'; tabUsage = 'Förbrukning'; linkUsage = 'Öppna GitHub-förbrukning ↗'; uServices = 'Alla tjänster'; uNoUse = 'ingen användning'; catAI = 'AI-krediter'; catOther = 'Övrigt'
         uHead = 'Actions-minuter · {0}'; uUsed = '{0} min använda av {1} inkluderade'; uOver = 'Inkluderade minuter är slut – {0} min att betala för ({1})'
         uOk = 'Inget att betala den här månaden'; uFore = 'Prognos för månaden: ca {0} min'; uForeCost = ' · ca {0} att betala'
@@ -85,6 +92,7 @@ $strings = @{
         uPaceOk = 'ligger godt, prognose {0} % af kvoten'; uMonthGone = 'Måneden er {0} % gået'; uBudget = 'Budget: {0} af {1} ({2} %)'; uBudgetFore = ' · prognose {0}'
         mQuota = 'Sæt kvote i minutter…'; mBudget = 'Sæt månedligt budget…'; badNum = 'Skriv et tal, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedligt budget i USD (0 = intet budget):'
+        uDailyFor = '{0} · {1} pr. dag'; uNoDaily = '{0} · ingen data pr. dag'; mBudgets = 'Budget pr. tjeneste'; askBudgetFor = 'Månedligt budget i USD for {0} (0 = ingen):'
         tabRuns = 'Kørsler'; tabUsage = 'Forbrug'; linkUsage = 'Åbn GitHub-forbrug ↗'; uServices = 'Alle tjenester'; uNoUse = 'intet forbrug'; catAI = 'AI-kreditter'; catOther = 'Andet'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brugt af {1} inkluderet'; uOver = 'Inkluderede minutter er brugt op – {0} min at betale for ({1})'
         uOk = 'Intet at betale denne måned'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} at betale'
@@ -209,11 +217,6 @@ function Format-Dur($ts) {
         <TextBlock Name="uSub" Foreground="#EEE" FontSize="13" TextWrapping="Wrap"/>
         <TextBlock Name="uPaceTxt" FontSize="13" TextWrapping="Wrap"/>
         <TextBlock Name="uCost" FontSize="13" Margin="0,4,0,0" TextWrapping="Wrap"/>
-        <Grid Name="uTrack2" Width="368" Height="9" Margin="0,8,0,3" Background="#333" HorizontalAlignment="Left" Visibility="Collapsed">
-          <Rectangle Name="uUsedBar2" HorizontalAlignment="Left" RadiusX="2" RadiusY="2" Width="0"/>
-          <Rectangle Name="uPace2" HorizontalAlignment="Left" Width="2" Fill="#FFFFFF" Opacity="0.85" Margin="0,-2,0,-2"/>
-        </Grid>
-        <TextBlock Name="uMoney" FontSize="13" TextWrapping="Wrap"/>
         <TextBlock Name="uFore" Foreground="#999" FontSize="13" Margin="0,4,0,0" TextWrapping="Wrap"/>
         <TextBlock Name="uDailyHead" Foreground="#EEE" FontSize="14" Margin="0,12,0,0"/>
         <Canvas Name="uDaily" Width="368" Height="52" Margin="0,4,0,0" HorizontalAlignment="Left"/>
@@ -232,7 +235,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'runsPanel', 'usagePanel', 'uHead', 'uTrack', 'uUsedBar', 'uPace', 'uSub', 'uPaceTxt', 'uCost', 'uTrack2', 'uUsedBar2', 'uPace2', 'uMoney', 'uFore', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'runsPanel', 'usagePanel', 'uHead', 'uTrack', 'uUsedBar', 'uPace', 'uSub', 'uPaceTxt', 'uCost', 'uFore', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -300,6 +303,27 @@ function Refresh-Usage {
     } @{}
 }
 
+$script:usageSel = [string]$cfg.usageSel
+$catDefs = @(
+    @{ key = 'Actions'; rx = '^actions' }, @{ key = 'Packages'; rx = 'packages' }, @{ key = 'Git LFS'; rx = 'lfs' },
+    @{ key = 'Codespaces'; rx = 'codespaces' }, @{ key = 'AI'; rx = 'copilot|model|spark|premium|credit|inference' }
+)
+$catKeys = @('Actions', 'Packages', 'Git LFS', 'Codespaces', 'AI', 'Other')
+function Get-Cat($it) {
+    $hay = (([string]$it.product) + ' ' + ([string]$it.sku)).ToLowerInvariant()
+    foreach ($cd in $catDefs) { if ($hay -match $cd.rx) { return $cd.key } }
+    'Other'
+}
+function Get-CatLabel($key) { switch ($key) { 'AI' { T 'catAI' } 'Other' { T 'catOther' } default { $key } } }
+function Norm-Unit($x) { ([string]$x).ToLowerInvariant() -replace '[-_ ]', '' }
+$unitLabel = @{ minutes = 'min'; gigabytehours = 'GB-h'; gigabytes = 'GB'; corehours = 'core-h'; requests = 'requests'; hours = 'h' }
+$unitPrio = @('minutes', 'requests', 'corehours', 'gigabytes', 'gigabytehours', 'hours')
+function Get-Budget($key) {
+    $bb = $cfg.budgets
+    if ($bb -is [System.Collections.IDictionary] -and $bb.Contains($key)) { return [double]$bb[$key] }
+    0.0
+}
+
 function Set-Track($bar, $pace, $pct, $monthPct, $color) {
     $w = 368.0
     $bar.Width = [math]::Max(0, [math]::Min(100, $pct)) / 100 * $w
@@ -311,7 +335,7 @@ function Render-Usage {
     $u = $script:usage
     $ci = Get-Culture2
     $el.uRepos.Children.Clear(); $el.uOther.Children.Clear(); $el.uDaily.Children.Clear()
-    $el.uNote.Visibility = 'Collapsed'; $el.uTrack2.Visibility = 'Collapsed'; $el.uMoney.Text = ''; $el.uPaceTxt.Text = ''
+    $el.uNote.Visibility = 'Collapsed'; $el.uPaceTxt.Text = ''
     $month = (Get-Date).ToUniversalTime()
     $el.uHead.Text = (T 'uHead') -f $month.ToString('MMMM yyyy', $ci)
     if ($u.err) { $el.uNote.Text = $u.err; $el.uNote.Foreground = Br $colors.fail; $el.uNote.Visibility = 'Visible' }
@@ -357,96 +381,107 @@ function Render-Usage {
     if ($fc -gt 0.005) { $foreTxt += (T 'uForeCost') -f (Format-Money $fc) }
     $el.uFore.Text = $foreTxt + "`n" + ((T 'uResets') -f $startM.AddMonths(1).ToString('d. MMMM', $ci))
 
-    # Minutes per day (bars) and per repository, from the detailed report
-    $detail = @($u.items | Where-Object { $_ -and $_.unitType -eq 'Minutes' })
-    if ($detail.Count) {
-        $el.uDailyHead.Text = T 'uDaily'
-        $byDay = @{}
-        foreach ($d in $detail) { $k = (ToUtc $d.date).Day; $byDay[$k] = [double]$byDay[$k] + [double]$d.quantity }
-        $max = [double](($byDay.Values | Measure-Object -Maximum).Maximum); if ($max -le 0) { $max = 1 }
-        $bw = 368.0 / $daysIn
-        for ($day = 1; $day -le $daysIn; $day++) {
-            $v = [double]$byDay[$day]
-            $h = if ($v -gt 0) { [math]::Max(2, $v / $max * 46) } else { 1 }
-            $r = New-Object Windows.Shapes.Rectangle
-            $r.Width = [math]::Max(1, $bw - 2); $r.Height = $h
-            $r.Fill = Br $(if ($day -eq $month.Day) { $colors.running } elseif ($v -gt 0) { '#6A9BCC' } else { '#333333' })
-            $r.ToolTip = "$day. : " + (Format-Num $v) + ' min'
-            [Windows.Controls.Canvas]::SetLeft($r, ($day - 1) * $bw); [Windows.Controls.Canvas]::SetTop($r, 50 - $h)
-            [void]$el.uDaily.Children.Add($r)
-        }
-        $el.uReposHead.Text = T 'uRepos'
-        $byRepo = $detail | Group-Object repositoryName | ForEach-Object { [pscustomobject]@{ name = $_.Name; v = [double](($_.Group | Measure-Object quantity -Sum).Sum) } } | Sort-Object v -Descending | Select-Object -First 5
-        foreach ($r in $byRepo) {
-            $tb = New-Object Windows.Controls.TextBlock; $tb.FontSize = 13; $tb.Foreground = Br '#BBBBBB'
-            $tb.Text = ('{0}  ·  {1} min' -f $r.name, (Format-Num $r.v)); [void]$el.uRepos.Children.Add($tb)
-        }
-    } else { $el.uDailyHead.Text = ''; $el.uReposHead.Text = '' }
-
-    # Every service on its own row, also when nothing was used: Actions, Packages, Git LFS, Codespaces and all AI credit SKUs.
-    # Quantities and billable amounts come straight from the billing report; whatever fits no row ends up under Other.
-    $unitNames = @{ 'minutes' = 'min'; 'gigabyte-hours' = 'GB-h'; 'gigabytes' = 'GB'; 'core-hours' = 'core-h'; 'requests' = 'requests'; 'hours' = 'h' }
+    # ---- the services: every one has its own row, also when nothing was used ----
     $aiSkus = @{}
     $all = @()
     foreach ($pi in @($u.premium)) { if ($pi) { $all += $pi; $aiSkus[[string]$pi.sku] = $true } }
     foreach ($si in $items) { if (-not $aiSkus.ContainsKey([string]$si.sku) -or [string]$si.product -notmatch 'copilot|model|spark|premium|credit') { $all += $si } }
-    $catDefs = @(
-        @{ name = 'Actions'; rx = '^actions' }, @{ name = 'Packages'; rx = 'packages' }, @{ name = 'Git LFS'; rx = 'lfs' },
-        @{ name = 'Codespaces'; rx = 'codespaces' }, @{ name = (T 'catAI'); rx = 'copilot|model|spark|premium|credit|inference' }
-    )
-    $rows = [ordered]@{}
-    foreach ($cd in $catDefs) { $rows[$cd.name] = New-Object System.Collections.ArrayList }
-    $rows[(T 'catOther')] = New-Object System.Collections.ArrayList
-    foreach ($it in $all) {
-        $hay = ([string]$it.product + ' ' + [string]$it.sku).ToLowerInvariant()
-        $target = T 'catOther'
-        foreach ($cd in $catDefs) { if ($hay -match $cd.rx) { $target = $cd.name; break } }
-        [void]$rows[$target].Add($it)
+    $groups = @{}
+    foreach ($k in $catKeys) { $groups[$k] = New-Object System.Collections.ArrayList }
+    foreach ($it in $all) { [void]$groups[(Get-Cat $it)].Add($it) }
+    $total = [double](($all | Measure-Object netAmount -Sum).Sum)
+    if ($total -gt 0.004) { $el.uCost.Text += "`n" + ((T 'uTotal') -f (Format-Money $total)) }
+
+    # ---- the chart and the repository list follow the service that was clicked ----
+    $sel = [string]$script:usageSel
+    if ($catKeys -notcontains $sel -or ($sel -eq 'Other' -and $groups['Other'].Count -eq 0)) { $sel = 'Actions' }
+    $detail = @($u.items | Where-Object { $_ -and $_.date -and (Get-Cat $_) -eq $sel })
+    $unit = $null
+    foreach ($pu in $unitPrio) { if (@($detail | Where-Object { (Norm-Unit $_.unitType) -eq $pu }).Count) { $unit = $pu; break } }
+    if (-not $unit -and $detail.Count) { $unit = Norm-Unit $detail[0].unitType }
+    $detailU = @($detail | Where-Object { (Norm-Unit $_.unitType) -eq $unit })
+    $ul = if ($unit -and $unitLabel.ContainsKey($unit)) { $unitLabel[$unit] } elseif ($unit) { $unit } else { '' }
+    $label = Get-CatLabel $sel
+    $byDay = @{}
+    foreach ($d in $detailU) { $k = (ToUtc $d.date).Day; $byDay[$k] = [double]$byDay[$k] + [double]$d.quantity }
+    $max = [double](($byDay.Values | Measure-Object -Maximum).Maximum); if ($max -le 0) { $max = 1 }
+    $el.uDailyHead.Text = $(if ($detailU.Count) { (T 'uDailyFor') -f $label, $ul } else { (T 'uNoDaily') -f $label })
+    $bw = 368.0 / $daysIn
+    for ($day = 1; $day -le $daysIn; $day++) {
+        $v = [double]$byDay[$day]
+        $h = if ($v -gt 0) { [math]::Max(2, $v / $max * 46) } else { 1 }
+        $r = New-Object Windows.Shapes.Rectangle
+        $r.Width = [math]::Max(1, $bw - 2); $r.Height = $h
+        $r.Fill = Br $(if ($day -eq $month.Day) { $colors.running } elseif ($v -gt 0) { '#6A9BCC' } else { '#333333' })
+        $r.ToolTip = "$day. : " + (Format-Num $v) + " $ul"
+        [Windows.Controls.Canvas]::SetLeft($r, ($day - 1) * $bw); [Windows.Controls.Canvas]::SetTop($r, 50 - $h)
+        [void]$el.uDaily.Children.Add($r)
     }
+    if ($detailU.Count) {
+        $el.uReposHead.Text = (T 'uRepos') + ' · ' + $label
+        $byRepo = $detailU | Group-Object repositoryName | ForEach-Object { [pscustomobject]@{ name = $_.Name; v = [double](($_.Group | Measure-Object quantity -Sum).Sum) } } | Sort-Object v -Descending | Select-Object -First 5
+        foreach ($r in $byRepo) {
+            $tb = New-Object Windows.Controls.TextBlock; $tb.FontSize = 13; $tb.Foreground = Br '#BBBBBB'
+            $tb.Text = ('{0}  ·  {1} {2}' -f $r.name, (Format-Num $r.v), $ul); [void]$el.uRepos.Children.Add($tb)
+        }
+    } else { $el.uReposHead.Text = '' }
+
+    # ---- one row per service: quantities, spending against its budget, month marker. A click selects it. ----
+    $unitNames = @{ minutes = 'min'; gigabytehours = 'GB-h'; gigabytes = 'GB'; corehours = 'core-h'; requests = 'requests'; hours = 'h' }
     $el.uOtherHead.Text = T 'uServices'
-    foreach ($name in $rows.Keys) {
-        $list = @($rows[$name])
-        if ($name -eq (T 'catOther') -and $list.Count -eq 0) { continue }
+    foreach ($key in $catKeys) {
+        $list = @($groups[$key])
+        if ($key -eq 'Other' -and $list.Count -eq 0) { continue }
         $qty = @()
         foreach ($it in $list) {
             $g = [double]$it.grossQuantity
             if ($g -gt 0) {
-                $un = [string]$it.unitType; if ($unitNames.ContainsKey($un.ToLowerInvariant())) { $un = $unitNames[$un.ToLowerInvariant()] }
+                $nu = Norm-Unit $it.unitType; $un = if ($unitNames.ContainsKey($nu)) { $unitNames[$nu] } else { [string]$it.unitType }
                 $gt = if ($g -ge 100) { Format-Num $g } else { $g.ToString('0.##', (Get-Culture2)) }
                 $qty += ('{0} {1}' -f $gt, $un)
             }
         }
         $netA = [double](($list | Measure-Object netAmount -Sum).Sum)
+        $bud = Get-Budget $key
         $dotColor = if ($netA -gt 0.004) { $colors.fail } elseif ($qty.Count) { $colors.running } else { $colors.queued }
-        $g2 = New-Object Windows.Controls.Grid; $g2.Margin = '0,2,0,2'
-        $cA = New-Object Windows.Controls.ColumnDefinition; $cA.Width = 118
+        $rowB = New-Object Windows.Controls.Border
+        $rowB.Padding = '4,3,4,3'; $rowB.Margin = '-4,0,-4,0'; $rowB.CornerRadius = 4; $rowB.Cursor = 'Hand'; $rowB.Tag = "cmd:svc:$key"
+        $rowB.Background = Br $(if ($key -eq $sel) { '#2C2C2C' } else { '#00000000' })
+        $sp2 = New-Object Windows.Controls.StackPanel
+        $g2 = New-Object Windows.Controls.Grid
+        $cA = New-Object Windows.Controls.ColumnDefinition; $cA.Width = 112
         $cB = New-Object Windows.Controls.ColumnDefinition; $cB.Width = '*'
         $cC = New-Object Windows.Controls.ColumnDefinition; $cC.Width = 'Auto'
         foreach ($cc in $cA, $cB, $cC) { [void]$g2.ColumnDefinitions.Add($cc) }
         $nm = New-Object Windows.Controls.StackPanel; $nm.Orientation = 'Horizontal'
         $dt = New-Object Windows.Shapes.Ellipse; $dt.Width = 8; $dt.Height = 8; $dt.Margin = '0,1,8,0'; $dt.Fill = Br $dotColor
-        $nt = New-Object Windows.Controls.TextBlock; $nt.Text = $name; $nt.FontSize = 13; $nt.Foreground = Br '#DDDDDD'
+        $nt = New-Object Windows.Controls.TextBlock; $nt.Text = Get-CatLabel $key; $nt.FontSize = 13; $nt.Foreground = Br $(if ($key -eq $sel) { '#FFFFFF' } else { '#DDDDDD' })
+        if ($key -eq $sel) { $nt.FontWeight = 'SemiBold' }
         [void]$nm.Children.Add($dt); [void]$nm.Children.Add($nt)
         $qt = New-Object Windows.Controls.TextBlock; $qt.FontSize = 13; $qt.TextTrimming = 'CharacterEllipsis'
         $qt.Text = $(if ($qty.Count) { $qty -join ' · ' } else { T 'uNoUse' }); $qt.Foreground = Br $(if ($qty.Count) { '#BBBBBB' } else { '#777777' })
         $bt = New-Object Windows.Controls.TextBlock; $bt.FontSize = 13; $bt.Margin = '10,0,0,0'
-        if ($netA -gt 0.004) { $bt.Text = Format-Money $netA; $bt.Foreground = Br $colors.fail } else { $bt.Text = '$0.00'; $bt.Foreground = Br '#777777' }
+        $bstate = 'ok'
+        if ($bud -gt 0) {
+            $bt.Text = '{0} / ${1}' -f (Format-Money $netA), ([double]$bud).ToString('0.##', $inv)
+            if ($netA -ge $bud) { $bstate = 'fail' } elseif ($netA / $bud * 100 -gt $monthPct + 10) { $bstate = 'running' }
+            $bt.Foreground = Br $(if ($netA -gt 0.004) { $colors[$bstate] } else { '#777777' })
+        } else {
+            $bt.Text = Format-Money $netA; $bt.Foreground = Br $(if ($netA -gt 0.004) { $colors.fail } else { '#777777' })
+        }
         [Windows.Controls.Grid]::SetColumn($nm, 0); [Windows.Controls.Grid]::SetColumn($qt, 1); [Windows.Controls.Grid]::SetColumn($bt, 2)
         [void]$g2.Children.Add($nm); [void]$g2.Children.Add($qt); [void]$g2.Children.Add($bt)
-        [void]$el.uOther.Children.Add($g2)
-    }
-    $total = [double](($all | Measure-Object netAmount -Sum).Sum)
-    if ($total -gt 0.004) { $el.uCost.Text += "`n" + ((T 'uTotal') -f (Format-Money $total)) }
-    # Monthly budget in dollars (menu): spending so far against the budget, with the same month marker
-    $bud = [double]$cfg.budgetUsd
-    if ($bud -gt 0) {
-        $otherNet = [double](($all | Where-Object { -not ($_.product -eq 'Actions' -and $_.unitType -eq 'minutes') } | Measure-Object netAmount -Sum).Sum)
-        $fcTotal = [math]::Max($total, $fc + $otherNet)
-        $bstate = if ($total -ge $bud) { 'fail' } elseif ($fcTotal -gt $bud) { 'running' } else { 'ok' }
-        $el.uTrack2.Visibility = 'Visible'
-        Set-Track $el.uUsedBar2 $el.uPace2 ($total / $bud * 100) $monthPct $colors[$bstate]
-        $el.uMoney.Text = ((T 'uBudget') -f (Format-Money $total), (Format-Money $bud), ([math]::Round($total / $bud * 100))) + ((T 'uBudgetFore') -f (Format-Money $fcTotal))
-        $el.uMoney.Foreground = Br $colors[$bstate]
+        [void]$sp2.Children.Add($g2)
+        if ($bud -gt 0) {
+            # budget bar: the white marker is how far the month has come, the bar should stay left of it
+            $trk = New-Object Windows.Controls.Grid; $trk.Height = 4; $trk.Margin = '0,3,0,0'; $trk.Background = Br '#333333'; $trk.HorizontalAlignment = 'Stretch'
+            $ub = New-Object Windows.Shapes.Rectangle; $ub.HorizontalAlignment = 'Left'; $ub.RadiusX = 2; $ub.RadiusY = 2; $ub.Fill = Br $colors[$bstate]
+            $ub.Width = [math]::Max(0, [math]::Min(100, $netA / $bud * 100)) / 100 * 352
+            $pm = New-Object Windows.Shapes.Rectangle; $pm.HorizontalAlignment = 'Left'; $pm.Width = 1.5; $pm.Fill = Br '#FFFFFF'; $pm.Opacity = 0.8; $pm.Margin = New-Object Windows.Thickness(([math]::Min(100, $monthPct) / 100 * 352 - 1), -1, 0, -1)
+            [void]$trk.Children.Add($ub); [void]$trk.Children.Add($pm); [void]$sp2.Children.Add($trk)
+        }
+        $rowB.Child = $sp2
+        [void]$el.uOther.Children.Add($rowB)
     }
 }
 
@@ -658,13 +693,19 @@ AddItem 'mQuota' {
     if (-not [double]::TryParse($v, [Globalization.NumberStyles]::Float, $inv, [ref]$n) -or $n -lt 0) { [void][Windows.MessageBox]::Show((T 'badNum'), (T 'title')); return }
     $cfg.quotaMinutes = $(if ($n -gt 0) { $n } else { $null }); Save-Config; Render
 } | Out-Null
-AddItem 'mBudget' {
-    $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askBudget'), (T 'title'), [string]$cfg.budgetUsd)).Trim() -replace ',', '.'
-    if (-not $v) { return }
-    $n = 0.0
-    if (-not [double]::TryParse($v, [Globalization.NumberStyles]::Float, $inv, [ref]$n) -or $n -lt 0) { [void][Windows.MessageBox]::Show((T 'badNum'), (T 'title')); return }
-    $cfg.budgetUsd = $(if ($n -gt 0) { $n } else { $null }); Save-Config; Render
-} | Out-Null
+$budgetMenu = AddItem 'mBudgets' {}
+$budgetItems = @{}
+foreach ($bk in 'Actions', 'Packages', 'Git LFS', 'Codespaces', 'AI') {
+    $bi = AddItem $null {
+        $key = $this.Tag
+        $v = ([Microsoft.VisualBasic.Interaction]::InputBox(((T 'askBudgetFor') -f (Get-CatLabel $key)), (T 'title'), [string](Get-Budget $key))).Trim() -replace ',', '.'
+        if (-not $v) { return }
+        $n = 0.0
+        if (-not [double]::TryParse($v, [Globalization.NumberStyles]::Float, $inv, [ref]$n) -or $n -lt 0) { [void][Windows.MessageBox]::Show((T 'badNum'), (T 'title')); return }
+        $cfg.budgets[$key] = $n; Save-Config; Render
+    } $budgetMenu
+    $bi.Tag = $bk; $budgetItems[$bk] = $bi
+}
 AddItem 'mAddRepo' {
     $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askRepo'), (T 'title'), '')).Trim()
     if (-not $v) { return }
@@ -698,6 +739,7 @@ foreach ($code in $langNames.Keys) {
 AddItem 'mClose' { $win.Close() } | Out-Null
 function Set-MenuText {
     foreach ($k in $menuItems.Keys) { $menuItems[$k].Header = T $k }
+    foreach ($k in $budgetItems.Keys) { $budgetItems[$k].Header = (Get-CatLabel $k) + '…' }
     foreach ($c in $langItems.Keys) { $langItems[$c].IsChecked = ($c -eq $cfg.language) }
 }
 Set-MenuText
@@ -718,6 +760,7 @@ $win.Add_MouseLeftButtonDown({
         if ($act -eq 'cmd:min') { Set-Minimized $true }
         elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
+        elseif ($act -like 'cmd:svc:*') { $script:usageSel = $act -replace '^cmd:svc:', ''; $cfg.usageSel = $script:usageSel; Save-Config; Render }
         elseif ($act) { Start-Process $act }
     } elseif ($cfg.minimized) { $cfg.miniLeft = $win.Left; $cfg.miniTop = $win.Top; Save-Config }
     else { $cfg.left = $win.Left; $cfg.top = $win.Top; Save-Config }
