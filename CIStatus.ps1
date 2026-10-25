@@ -5,7 +5,7 @@ $dir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
-$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8 }
+$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null }
 if (Test-Path $cfgPath) {
     try { (Get-Content $cfgPath -Raw | ConvertFrom-Json).psobject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } } catch {}
 }
@@ -18,8 +18,8 @@ $strings = @{
         updated = 'Updated {0}'; hint = 'Click a run to open it · right-click for options'; finished = 'Finished: {0} – {1}'
         agoNow = 'just now'; agoM = '{0} min ago'; agoH = '{0} h ago'; agoD = '{0} d ago'
         stRunning = 'running'; stQueued = 'queued'; stOk = 'success'; stFail = 'failed'; stCancel = 'cancelled'; stSkip = 'skipped'; stWarn = 'needs attention'
-        jobs = 'jobs {0}/{1}'
-        mRefresh = 'Refresh now'; mUpdate = 'Update the widget'; mAddRepo = 'Add repository…'; mRemoveRepo = 'Remove repository'
+        jobs = 'jobs {0}/{1}'; minimize = 'Minimize'; restore = 'Show all runs'; nothing = 'Nothing running'
+        mRefresh = 'Refresh now'; mMinimize = 'Minimize'; mUpdate = 'Update the widget'; mAddRepo = 'Add repository…'; mRemoveRepo = 'Remove repository'
         mTopmost = 'Always on top'; mLanguage = 'Language'; mClose = 'Close'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
         noGh = 'The GitHub CLI (gh) was not found. Install it and run: gh auth login'; ghErr = 'Could not read {0}: {1}'
@@ -29,8 +29,8 @@ $strings = @{
         updated = 'Oppdatert {0}'; hint = 'Trykk på en kjøring for å åpne den · høyreklikk for valg'; finished = 'Ferdig: {0} – {1}'
         agoNow = 'nå nettopp'; agoM = 'for {0} min siden'; agoH = 'for {0} t siden'; agoD = 'for {0} d siden'
         stRunning = 'kjører'; stQueued = 'i kø'; stOk = 'vellykket'; stFail = 'feilet'; stCancel = 'avbrutt'; stSkip = 'hoppet over'; stWarn = 'krever oppmerksomhet'
-        jobs = 'jobber {0}/{1}'
-        mRefresh = 'Oppdater nå'; mUpdate = 'Oppdater widgeten'; mAddRepo = 'Legg til repo…'; mRemoveRepo = 'Fjern repo'
+        jobs = 'jobber {0}/{1}'; minimize = 'Minimer'; restore = 'Vis alle kjøringer'; nothing = 'Ingenting kjører'
+        mRefresh = 'Oppdater nå'; mMinimize = 'Minimer'; mUpdate = 'Oppdater widgeten'; mAddRepo = 'Legg til repo…'; mRemoveRepo = 'Fjern repo'
         mTopmost = 'Alltid øverst'; mLanguage = 'Språk'; mClose = 'Lukk'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) ble ikke funnet. Installer den og kjør: gh auth login'; ghErr = 'Kunne ikke lese {0}: {1}'
@@ -40,8 +40,8 @@ $strings = @{
         updated = 'Uppdaterad {0}'; hint = 'Klicka på en körning för att öppna den · högerklicka för val'; finished = 'Klar: {0} – {1}'
         agoNow = 'nyss'; agoM = 'för {0} min sedan'; agoH = 'för {0} h sedan'; agoD = 'för {0} d sedan'
         stRunning = 'körs'; stQueued = 'i kö'; stOk = 'lyckades'; stFail = 'misslyckades'; stCancel = 'avbruten'; stSkip = 'hoppades över'; stWarn = 'kräver uppmärksamhet'
-        jobs = 'jobb {0}/{1}'
-        mRefresh = 'Uppdatera nu'; mUpdate = 'Uppdatera widgeten'; mAddRepo = 'Lägg till repo…'; mRemoveRepo = 'Ta bort repo'
+        jobs = 'jobb {0}/{1}'; minimize = 'Minimera'; restore = 'Visa alla körningar'; nothing = 'Inget körs'
+        mRefresh = 'Uppdatera nu'; mMinimize = 'Minimera'; mUpdate = 'Uppdatera widgeten'; mAddRepo = 'Lägg till repo…'; mRemoveRepo = 'Ta bort repo'
         mTopmost = 'Alltid överst'; mLanguage = 'Språk'; mClose = 'Stäng'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) hittades inte. Installera den och kör: gh auth login'; ghErr = 'Kunde inte läsa {0}: {1}'
@@ -51,8 +51,8 @@ $strings = @{
         updated = 'Opdateret {0}'; hint = 'Klik på en kørsel for at åbne den · højreklik for valg'; finished = 'Færdig: {0} – {1}'
         agoNow = 'lige nu'; agoM = 'for {0} min siden'; agoH = 'for {0} t siden'; agoD = 'for {0} d siden'
         stRunning = 'kører'; stQueued = 'i kø'; stOk = 'lykkedes'; stFail = 'fejlede'; stCancel = 'afbrudt'; stSkip = 'sprunget over'; stWarn = 'kræver opmærksomhed'
-        jobs = 'jobs {0}/{1}'
-        mRefresh = 'Opdater nu'; mUpdate = 'Opdater widgetten'; mAddRepo = 'Tilføj repo…'; mRemoveRepo = 'Fjern repo'
+        jobs = 'jobs {0}/{1}'; minimize = 'Minimer'; restore = 'Vis alle kørsler'; nothing = 'Intet kører'
+        mRefresh = 'Opdater nu'; mMinimize = 'Minimer'; mUpdate = 'Opdater widgetten'; mAddRepo = 'Tilføj repo…'; mRemoveRepo = 'Fjern repo'
         mTopmost = 'Altid øverst'; mLanguage = 'Sprog'; mClose = 'Luk'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) blev ikke fundet. Installer den og kør: gh auth login'; ghErr = 'Kunne ikke læse {0}: {1}'
@@ -138,9 +138,15 @@ function Format-Dur($ts) {
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" SizeToContent="WidthAndHeight" ResizeMode="NoResize">
+  <Grid>
+  <!-- Minimized: only what is running (or one dot with the latest result) -->
+  <Border Name="mini" CornerRadius="8" Background="#1E1E1E" BorderBrush="#3A3A3A" BorderThickness="1" Padding="10,6" Cursor="Hand" Visibility="Collapsed" Tag="cmd:restore">
+    <StackPanel Name="miniRows"/>
+  </Border>
   <Border Name="root" CornerRadius="10" Background="#1E1E1E" BorderBrush="#3A3A3A" BorderThickness="1" Padding="16,12" Width="400">
     <StackPanel>
       <DockPanel Margin="0,0,0,6">
+        <TextBlock Name="minBtn" DockPanel.Dock="Right" Text="–" Foreground="#777" FontSize="15" Cursor="Hand" Margin="12,-2,0,0" Background="Transparent" Tag="cmd:min"/>
         <TextBlock Name="summary" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
         <TextBlock Name="title" Foreground="#D97757" FontWeight="SemiBold" FontSize="16"/>
       </DockPanel>
@@ -150,11 +156,12 @@ function Format-Dur($ts) {
       <TextBlock Name="upd" Foreground="#666" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"/>
     </StackPanel>
   </Border>
+  </Grid>
 </Window>
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'summary', 'title', 'flash', 'rows', 'note', 'upd' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -163,6 +170,7 @@ $script:errors = @{}          # repo -> message
 $script:jobInfo = @{}         # run id -> 'done/total'
 $script:prevState = @{}       # run id -> state at the last refresh
 $script:flashUntil = [datetime]::MinValue
+$script:flashColor = '#EEEEEE'
 $script:updatedAt = $null
 $script:cycle = $null
 $script:since = 999
@@ -223,6 +231,30 @@ function Render {
     else { $el.note.Visibility = 'Collapsed' }
 
     if ((Get-Date) -lt $script:flashUntil) { $el.flash.Visibility = 'Visible' } else { $el.flash.Visibility = 'Collapsed' }
+    # Minimized view: one line per run that is running; with nothing running, a dot in the colour of the latest result
+    $el.miniRows.Children.Clear()
+    $addMini = {
+        param($color, $text)
+        $mr = New-Object Windows.Controls.StackPanel; $mr.Orientation = 'Horizontal'; $mr.Margin = '0,2,0,2'
+        $d = New-Object Windows.Shapes.Ellipse; $d.Width = 9; $d.Height = 9; $d.Margin = '0,1,8,0'; $d.Fill = Br $color
+        $tb = New-Object Windows.Controls.TextBlock; $tb.Text = $text; $tb.Foreground = Br '#EEEEEE'; $tb.FontSize = 12
+        [void]$mr.Children.Add($d); [void]$mr.Children.Add($tb); [void]$el.miniRows.Children.Add($mr)
+    }
+    foreach ($r in ($running | Select-Object -First 4)) {
+        $name = [string]$r.displayTitle; if ($name.Length -gt 34) { $name = $name.Substring(0, 33) + '…' }
+        $info = Format-Dur ((Get-Date).ToUniversalTime() - (ToUtc $r.createdAt))
+        if ($script:jobInfo.ContainsKey([string]$r.databaseId)) { $info += ' · ' + ((T 'jobs') -f ($script:jobInfo[[string]$r.databaseId] -split '/')) }
+        & $addMini $colors[(Get-State $r)] "$name  $info"
+    }
+    if ((Get-Date) -lt $script:flashUntil) { & $addMini $script:flashColor ([string]$el.flash.Text) }
+    if ($el.miniRows.Children.Count -eq 0) {
+        if (-not $gh) { & $addMini $colors.fail (T 'noGh') }
+        elseif ($script:errors.Count) { & $addMini $colors.fail ((T 'ghErr') -f @($script:errors.Keys)[0], '') }
+        elseif ($latest.Values -contains 'fail') { & $addMini $colors.fail (T 'failing') }
+        elseif ($script:runs.Count -gt 0) { & $addMini $colors.ok (T 'green') }
+        else { & $addMini $colors.queued (T 'nothing') }
+    }
+    $el.mini.ToolTip = T 'restore'; $el.minBtn.ToolTip = T 'minimize'
     $el.upd.Text = $(if ($script:updatedAt) { ((T 'updated') -f $script:updatedAt.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T 'hint')
 }
 
@@ -235,7 +267,7 @@ function Complete-Cycle {
         $id = [string]$r.databaseId; $st = Get-State $r
         if ($script:prevState.ContainsKey($id) -and $script:prevState[$id] -in 'running', 'queued' -and $st -notin 'running', 'queued') {
             $el.flash.Text = (T 'finished') -f $r.displayTitle, (T $stateKey[$st])
-            $el.flash.Foreground = Br $colors[$st]
+            $el.flash.Foreground = Br $colors[$st]; $script:flashColor = $colors[$st]
             $script:flashUntil = (Get-Date).AddSeconds(60)
         }
         $script:prevState[$id] = $st
@@ -292,11 +324,30 @@ function Refresh {
     Render
 }
 
+function Set-Minimized($m) {
+    $cfg.minimized = [bool]$m; Save-Config
+    $el.root.Visibility = $(if ($m) { 'Collapsed' } else { 'Visible' })
+    $el.mini.Visibility = $(if ($m) { 'Visible' } else { 'Collapsed' })
+    Render
+    $win.UpdateLayout()
+    $wa = [Windows.SystemParameters]::WorkArea
+    if ($m) {
+        if ($null -ne $cfg.miniLeft -and $null -ne $cfg.miniTop) {
+            $win.Left = [math]::Max($wa.Left, [math]::Min([double]$cfg.miniLeft, $wa.Right - $win.ActualWidth))
+            $win.Top = [math]::Max($wa.Top, [math]::Min([double]$cfg.miniTop, $wa.Bottom - $win.ActualHeight))
+        } else { $win.Left = $wa.Right - $win.ActualWidth - 12; $win.Top = $wa.Bottom - $win.ActualHeight - 12 }
+    } else {
+        $win.Left = [math]::Max($wa.Left, [math]::Min([double]$cfg.left, $wa.Right - $win.ActualWidth))
+        $win.Top = [math]::Max($wa.Top, [math]::Min([double]$cfg.top, $wa.Bottom - $win.ActualHeight))
+    }
+}
+
 # ---------- menu ----------
 $menu = New-Object Windows.Controls.ContextMenu
 $menuItems = @{}
 function AddItem($key, $action, $parent = $menu) { $mi = New-Object Windows.Controls.MenuItem; $mi.Add_Click($action); [void]$parent.Items.Add($mi); if ($key) { $menuItems[$key] = $mi }; $mi }
 AddItem 'mRefresh' { Refresh } | Out-Null
+AddItem 'mMinimize' { Set-Minimized (-not $cfg.minimized) } | Out-Null
 AddItem 'mAddRepo' {
     $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askRepo'), (T 'title'), '')).Trim()
     if (-not $v) { return }
@@ -335,19 +386,22 @@ function Set-MenuText {
 Set-MenuText
 $win.ContextMenu = $menu
 
-# Drag the window; a click without moving opens the run under the mouse
+# Drag the window; a click without moving opens the run under the mouse, or minimizes / restores
 $win.Add_MouseLeftButtonDown({
     param($s, $e)
-    $src = $e.OriginalSource; $url = $null
-    while ($src -and -not $url) {
-        if ($src -is [Windows.FrameworkElement] -and $src.Tag -is [string] -and $src.Tag -like 'http*') { $url = $src.Tag }
+    $src = $e.OriginalSource; $act = $null
+    while ($src -and -not $act) {
+        if ($src -is [Windows.FrameworkElement] -and $src.Tag -is [string] -and ($src.Tag -like 'http*' -or $src.Tag -like 'cmd:*')) { $act = $src.Tag }
         $src = if ($src -is [Windows.Media.Visual] -or $src -is [Windows.Media.Media3D.Visual3D]) { [Windows.Media.VisualTreeHelper]::GetParent($src) } else { $null }
     }
     $l0 = $win.Left; $t0 = $win.Top
     $win.DragMove()
     if ([math]::Abs($win.Left - $l0) -lt 4 -and [math]::Abs($win.Top - $t0) -lt 4) {
-        if ($url) { Start-Process $url }
-    } else { $cfg.left = $win.Left; $cfg.top = $win.Top; Save-Config }
+        if ($act -eq 'cmd:min') { Set-Minimized $true }
+        elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
+        elseif ($act) { Start-Process $act }
+    } elseif ($cfg.minimized) { $cfg.miniLeft = $win.Left; $cfg.miniTop = $win.Top; Save-Config }
+    else { $cfg.left = $win.Left; $cfg.top = $win.Top; Save-Config }
 })
 
 # Keep the window on a screen (a saved position can be on a monitor that is gone)
@@ -366,8 +420,9 @@ $timer.Add_Tick({
     $busy = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' }).Count -gt 0
     $every = if ($busy) { 10 } else { 30 }
     if ($script:since -ge $every -and -not $script:cycle) { Refresh }
-    elseif ($script:tick % 5 -eq 0 -and $script:runs.Count -gt 0) { Render }
+    elseif ($script:runs.Count -gt 0 -and ($script:tick % 5 -eq 0 -or ($cfg.minimized -and $busy))) { Render }
 })
 $timer.Start()
 Refresh
+if ($cfg.minimized) { Set-Minimized $true }
 [void]$win.ShowDialog()

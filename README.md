@@ -5,6 +5,7 @@ A small always-on-top Windows desktop widget that shows the state of your GitHub
 - Latest runs across the repositories you watch, newest first, with a coloured dot: yellow = running (with elapsed time and `jobs done/total`), green = success, red = failed, grey = cancelled/skipped/queued.
 - Header summary: `N running`, `Failing` (the latest run of some workflow failed) or `All green`.
 - When a run that was running finishes, a line at the top announces it for a minute.
+- Minimize with the dash in the corner (or right-click, Minimize): a small pill that shows only the runs that are running, with elapsed time and jobs done. With nothing running it is a single dot, green (all green) or red (failing). Click the pill to bring the full list back; the pill remembers its own position.
 - Click a run to open it on GitHub. Drag the widget anywhere; the position is remembered.
 - Refreshes every 30 seconds, every 10 seconds while something is running.
 - Languages: English, Norwegian, Swedish, Danish (right-click, Language).
@@ -34,6 +35,7 @@ Right-click the widget:
 | Item | What it does |
 | --- | --- |
 | Refresh now | Reads GitHub right away |
+| Minimize | Shrinks to only what is running |
 | Add repository… | Watch another repository (`owner/name`) |
 | Remove repository | Stop watching one |
 | Update the widget | Installs the latest version from GitHub |
