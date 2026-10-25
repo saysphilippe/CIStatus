@@ -264,7 +264,7 @@ function Receive-Usage($out, $err, $code, $ctx) {
         } catch { $script:usage.err = (T 'uErr') -f 'JSON' }
     }
     $script:usage.pending--
-    if ($script:usage.pending -le 0) { $script:usage.at = Get-Date; $script:usage.pending = 0; Render }
+    if ($script:usage.pending -le 0) { $script:usage.at = Get-Date; $script:usage.pending = 0; Render; if ($win.IsLoaded) { Keep-OnScreen } }
 }
 function Start-UsageFetch {
     $now = (Get-Date).ToUniversalTime()
@@ -412,6 +412,7 @@ function Show-Tab($t) {
     $el.tabUsage.Foreground = Br $(if ($t -eq 'usage') { '#D97757' } else { '#999999' }); $el.tabUsage.FontWeight = $(if ($t -eq 'usage') { 'SemiBold' } else { 'Normal' })
     if ($t -eq 'usage' -and (-not $script:usage.at -or ((Get-Date) - $script:usage.at).TotalSeconds -gt 60)) { Refresh-Usage }
     Render
+    if ($win.IsLoaded) { Keep-OnScreen }
 }
 
 function Render {
@@ -518,6 +519,7 @@ function Complete-Cycle {
     $script:updatedAt = Get-Date
     $script:cycle = $null
     Render
+    if ($win.IsLoaded) { Keep-OnScreen }
     # For runs in progress, read the jobs so the row can show how far it has come
     foreach ($r in ($all | Where-Object { (Get-State $_) -eq 'running' } | Select-Object -First 3)) {
         Start-Gh "run view $($r.databaseId) --repo $($r.repo) --json jobs" {
@@ -566,22 +568,35 @@ function Refresh {
     Render
 }
 
+# The window is not drawn yet at start-up (ActualWidth is 0), so its size is measured instead
+function Get-WinSize {
+    # The window sizes itself to its content, so the content's own desired size is the window size
+    $c = $win.Content
+    $c.Measure((New-Object Windows.Size ([double]::PositiveInfinity), ([double]::PositiveInfinity)))
+    @($c.DesiredSize.Width, $c.DesiredSize.Height)
+}
+# Keep the whole window inside the work area (taskbar excluded), e.g. after the Usage tab made it taller
+$script:dragging = $false
+function Keep-OnScreen {
+    if ($script:dragging) { return }
+    $sz = Get-WinSize
+    $wa = [Windows.SystemParameters]::WorkArea
+    $win.Left = [math]::Max($wa.Left, [math]::Min($win.Left, $wa.Right - $sz[0]))
+    $win.Top = [math]::Max($wa.Top, [math]::Min($win.Top, $wa.Bottom - $sz[1]))
+}
+
 function Set-Minimized($m) {
     $cfg.minimized = [bool]$m; Save-Config
     $el.root.Visibility = $(if ($m) { 'Collapsed' } else { 'Visible' })
     $el.mini.Visibility = $(if ($m) { 'Visible' } else { 'Collapsed' })
     Render
-    $win.UpdateLayout()
+    $sz = Get-WinSize
     $wa = [Windows.SystemParameters]::WorkArea
     if ($m) {
-        if ($null -ne $cfg.miniLeft -and $null -ne $cfg.miniTop) {
-            $win.Left = [math]::Max($wa.Left, [math]::Min([double]$cfg.miniLeft, $wa.Right - $win.ActualWidth))
-            $win.Top = [math]::Max($wa.Top, [math]::Min([double]$cfg.miniTop, $wa.Bottom - $win.ActualHeight))
-        } else { $win.Left = $wa.Right - $win.ActualWidth - 12; $win.Top = $wa.Bottom - $win.ActualHeight - 12 }
-    } else {
-        $win.Left = [math]::Max($wa.Left, [math]::Min([double]$cfg.left, $wa.Right - $win.ActualWidth))
-        $win.Top = [math]::Max($wa.Top, [math]::Min([double]$cfg.top, $wa.Bottom - $win.ActualHeight))
-    }
+        if ($null -ne $cfg.miniLeft -and $null -ne $cfg.miniTop) { $win.Left = [double]$cfg.miniLeft; $win.Top = [double]$cfg.miniTop }
+        else { $win.Left = $wa.Right - $sz[0] - 12; $win.Top = $wa.Bottom - $sz[1] - 12 }
+    } else { $win.Left = [double]$cfg.left; $win.Top = [double]$cfg.top }
+    Keep-OnScreen
 }
 
 # ---------- menu ----------
@@ -651,7 +666,8 @@ $win.Add_MouseLeftButtonDown({
         $src = if ($src -is [Windows.Media.Visual] -or $src -is [Windows.Media.Media3D.Visual3D]) { [Windows.Media.VisualTreeHelper]::GetParent($src) } else { $null }
     }
     $l0 = $win.Left; $t0 = $win.Top
-    $win.DragMove()
+    $script:dragging = $true
+    try { $win.DragMove() } finally { $script:dragging = $false }
     if ([math]::Abs($win.Left - $l0) -lt 4 -and [math]::Abs($win.Top - $t0) -lt 4) {
         if ($act -eq 'cmd:min') { Set-Minimized $true }
         elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
@@ -660,12 +676,6 @@ $win.Add_MouseLeftButtonDown({
     } elseif ($cfg.minimized) { $cfg.miniLeft = $win.Left; $cfg.miniTop = $win.Top; Save-Config }
     else { $cfg.left = $win.Left; $cfg.top = $win.Top; Save-Config }
 })
-
-# Keep the window on a screen (a saved position can be on a monitor that is gone)
-$vl = [Windows.SystemParameters]::VirtualScreenLeft; $vt = [Windows.SystemParameters]::VirtualScreenTop
-$vw = [Windows.SystemParameters]::VirtualScreenWidth; $vh = [Windows.SystemParameters]::VirtualScreenHeight
-if ($win.Left -lt $vl -or $win.Left -gt $vl + $vw - 60) { $win.Left = $vl + 100 }
-if ($win.Top -lt $vt -or $win.Top -gt $vt + $vh - 60) { $win.Top = $vt + 100 }
 
 # One-second tick: collect finished gh calls, redraw elapsed times, refresh every 30 s (10 s while something runs)
 $script:tick = 0
@@ -683,5 +693,5 @@ $timer.Add_Tick({
 $timer.Start()
 Show-Tab $(if ($cfg.tab -eq 'usage') { 'usage' } else { 'runs' })
 Refresh
-if ($cfg.minimized) { Set-Minimized $true }
+if ($cfg.minimized) { Set-Minimized $true } else { Keep-OnScreen }   # a saved position can be on a monitor that is gone
 [void]$win.ShowDialog()
