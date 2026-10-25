@@ -208,17 +208,7 @@ function Format-Dur($ts) {
       <TextBlock Name="note" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
       </StackPanel>
       <StackPanel Name="usagePanel" Visibility="Collapsed">
-        <TextBlock Name="uHead" Foreground="#EEE" FontSize="14"/>
-        <!-- The white marker shows how far through the month we are: the bar should stay left of it -->
-        <Grid Name="uTrack" Width="368" Height="9" Margin="0,4,0,3" Background="#333" HorizontalAlignment="Left">
-          <Rectangle Name="uUsedBar" HorizontalAlignment="Left" RadiusX="2" RadiusY="2" Width="0"/>
-          <Rectangle Name="uPace" HorizontalAlignment="Left" Width="2" Fill="#FFFFFF" Opacity="0.85" Margin="0,-2,0,-2"/>
-        </Grid>
-        <TextBlock Name="uSub" Foreground="#EEE" FontSize="13" TextWrapping="Wrap"/>
-        <TextBlock Name="uPaceTxt" FontSize="13" TextWrapping="Wrap"/>
-        <TextBlock Name="uCost" FontSize="13" Margin="0,4,0,0" TextWrapping="Wrap"/>
-        <TextBlock Name="uFore" Foreground="#999" FontSize="13" Margin="0,4,0,0" TextWrapping="Wrap"/>
-        <TextBlock Name="uDailyHead" Foreground="#EEE" FontSize="14" Margin="0,12,0,0"/>
+        <TextBlock Name="uDailyHead" Foreground="#EEE" FontSize="14"/>
         <Canvas Name="uDaily" Width="368" Height="52" Margin="0,4,0,0" HorizontalAlignment="Left"/>
         <TextBlock Name="uReposHead" Foreground="#EEE" FontSize="14" Margin="0,10,0,2"/>
         <StackPanel Name="uRepos"/>
@@ -235,7 +225,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'runsPanel', 'usagePanel', 'uHead', 'uTrack', 'uUsedBar', 'uPace', 'uSub', 'uPaceTxt', 'uCost', 'uFore', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -324,62 +314,24 @@ function Get-Budget($key) {
     0.0
 }
 
-function Set-Track($bar, $pace, $pct, $monthPct, $color) {
-    $w = 368.0
-    $bar.Width = [math]::Max(0, [math]::Min(100, $pct)) / 100 * $w
-    $bar.Fill = Br $color
-    $pace.Margin = New-Object Windows.Thickness(([math]::Max(0, [math]::Min(100, $monthPct)) / 100 * $w - 1), -2, 0, -2)
-}
-
 function Render-Usage {
     $u = $script:usage
     $ci = Get-Culture2
     $el.uRepos.Children.Clear(); $el.uOther.Children.Clear(); $el.uDaily.Children.Clear()
-    $el.uNote.Visibility = 'Collapsed'; $el.uPaceTxt.Text = ''
+    $el.uNote.Visibility = 'Collapsed'
     $month = (Get-Date).ToUniversalTime()
-    $el.uHead.Text = (T 'uHead') -f $month.ToString('MMMM yyyy', $ci)
     if ($u.err) { $el.uNote.Text = $u.err; $el.uNote.Foreground = Br $colors.fail; $el.uNote.Visibility = 'Visible' }
     $has = [bool]$u.summary
     if (-not $has) {
-        $el.uUsedBar.Width = 0; $el.uPace.Margin = '0,-2,0,-2'; $el.uSub.Text = $(if ($u.pending -gt 0) { T 'uLoading' } elseif (-not $u.err) { T 'uNone' } else { '' })
-        $el.uCost.Text = ''; $el.uFore.Text = ''; $el.uDailyHead.Text = ''; $el.uReposHead.Text = ''; $el.uOtherHead.Text = ''
+        $el.uDailyHead.Text = $(if ($u.pending -gt 0) { T 'uLoading' } elseif (-not $u.err) { T 'uNone' } else { '' })
+        $el.uReposHead.Text = ''; $el.uOtherHead.Text = ''
         return
     }
     $items = @($u.summary.usageItems | Where-Object { $_ })
-    $mins = @($items | Where-Object { $_.product -eq 'Actions' -and $_.unitType -eq 'minutes' })
-    $gross = [double](($mins | Measure-Object grossQuantity -Sum).Sum)
-    $disc = [double](($mins | Measure-Object discountQuantity -Sum).Sum)
-    $net = [double](($mins | Measure-Object netQuantity -Sum).Sum)
-    $netAmt = [double](($mins | Measure-Object netAmount -Sum).Sum)
-    $price = if ($mins.Count -and $mins[0].pricePerUnit) { [double]$mins[0].pricePerUnit } else { 0.006 }
-    # The plan's included minutes: known exactly once they are used up (the discount), otherwise the configured value
-    $incl = if ($net -gt 0) { $disc } else { [math]::Max([double]$cfg.actionsIncluded, $gross) }
-    if ($incl -le 0) { $incl = 1 }
-    # The user's own quota in minutes (menu), otherwise what the plan includes
-    $quota = if ([double]$cfg.quotaMinutes -gt 0) { [double]$cfg.quotaMinutes } else { $incl }
     $startM = Get-Date -Year $month.Year -Month $month.Month -Day 1 -Hour 0 -Minute 0 -Second 0
     $daysIn = [datetime]::DaysInMonth($month.Year, $month.Month)
     $elapsed = [math]::Max(1.0, ($month - $startM.ToUniversalTime()).TotalDays)
     $monthPct = [math]::Min(100, $elapsed / $daysIn * 100)
-    $fg = $gross / $elapsed * $daysIn
-    $pct = $gross / $quota * 100
-    $state = if ($gross -ge $quota) { 'fail' } elseif ($fg -gt $quota) { 'running' } else { 'ok' }
-    Set-Track $el.uUsedBar $el.uPace $pct $monthPct $colors[$state]
-    $el.uSub.Text = (T 'uQuota') -f (Format-Num $gross), (Format-Num $quota), ([math]::Round($pct))
-    if ($gross -ge $quota) { $paceTxt = (T 'uPaceOver') -f (Format-Num ($gross - $quota)) }
-    elseif ($fg -gt $quota) {
-        $rate = [math]::Max($gross / $elapsed, 0.0001)
-        $paceTxt = (T 'uPaceHit') -f $month.AddDays(($quota - $gross) / $rate).ToString('d. MMMM', $ci)
-    } else { $paceTxt = (T 'uPaceOk') -f ([math]::Round($fg / $quota * 100)) }
-    $el.uPaceTxt.Text = ((T 'uMonthGone') -f ([math]::Round($monthPct))) + ' · ' + $paceTxt
-    $el.uPaceTxt.Foreground = Br $colors[$state]
-    if ($net -gt 0) { $el.uCost.Text = (T 'uOver') -f (Format-Num $net), (Format-Money $netAmt); $el.uCost.Foreground = Br $colors.fail }
-    else { $el.uCost.Text = T 'uOk'; $el.uCost.Foreground = Br $colors.ok }
-    # Forecast of the month's minutes and what is billable at the plan's price beyond what it includes
-    $foreTxt = (T 'uFore') -f (Format-Num (([math]::Round($fg / 10) * 10)))
-    $fc = [math]::Max(0, $fg - $incl) * $price
-    if ($fc -gt 0.005) { $foreTxt += (T 'uForeCost') -f (Format-Money $fc) }
-    $el.uFore.Text = $foreTxt + "`n" + ((T 'uResets') -f $startM.AddMonths(1).ToString('d. MMMM', $ci))
 
     # ---- the services: every one has its own row, also when nothing was used ----
     $aiSkus = @{}
@@ -390,7 +342,6 @@ function Render-Usage {
     foreach ($k in $catKeys) { $groups[$k] = New-Object System.Collections.ArrayList }
     foreach ($it in $all) { [void]$groups[(Get-Cat $it)].Add($it) }
     $total = [double](($all | Measure-Object netAmount -Sum).Sum)
-    if ($total -gt 0.004) { $el.uCost.Text += "`n" + ((T 'uTotal') -f (Format-Money $total)) }
 
     # ---- the chart and the repository list follow the service that was clicked ----
     $sel = [string]$script:usageSel
@@ -428,7 +379,7 @@ function Render-Usage {
 
     # ---- one row per service: quantities, spending against its budget, month marker. A click selects it. ----
     $unitNames = @{ minutes = 'min'; gigabytehours = 'GB-h'; gigabytes = 'GB'; corehours = 'core-h'; requests = 'requests'; hours = 'h' }
-    $el.uOtherHead.Text = T 'uServices'
+    $el.uOtherHead.Text = (T 'uServices') + $(if ($total -gt 0.004) { ' · ' + ((T 'uBillable') -f (Format-Money $total)) } else { '' })
     foreach ($key in $catKeys) {
         $list = @($groups[$key])
         if ($key -eq 'Other' -and $list.Count -eq 0) { continue }
@@ -686,13 +637,6 @@ $menuItems = @{}
 function AddItem($key, $action, $parent = $menu) { $mi = New-Object Windows.Controls.MenuItem; $mi.Add_Click($action); [void]$parent.Items.Add($mi); if ($key) { $menuItems[$key] = $mi }; $mi }
 AddItem 'mRefresh' { Refresh; if ($cfg.tab -eq 'usage') { Refresh-Usage } } | Out-Null
 AddItem 'mMinimize' { Set-Minimized (-not $cfg.minimized) } | Out-Null
-AddItem 'mQuota' {
-    $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askQuota'), (T 'title'), [string]$cfg.quotaMinutes)).Trim() -replace ',', '.'
-    if (-not $v) { return }
-    $n = 0.0
-    if (-not [double]::TryParse($v, [Globalization.NumberStyles]::Float, $inv, [ref]$n) -or $n -lt 0) { [void][Windows.MessageBox]::Show((T 'badNum'), (T 'title')); return }
-    $cfg.quotaMinutes = $(if ($n -gt 0) { $n } else { $null }); Save-Config; Render
-} | Out-Null
 $budgetMenu = AddItem 'mBudgets' {}
 $budgetItems = @{}
 foreach ($bk in 'Actions', 'Packages', 'Git LFS', 'Codespaces', 'AI') {
