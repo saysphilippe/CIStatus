@@ -22,7 +22,7 @@ $strings = @{
         uPaceOk = 'on track, forecast {0} % of the quota'; uMonthGone = 'Month {0} % gone'; uBudget = 'Budget: {0} of {1} ({2} %)'; uBudgetFore = ' · forecast {0}'
         mQuota = 'Set minutes quota…'; mBudget = 'Set monthly budget…'; badNum = 'Enter a number, for example 3000.'
         askQuota = 'Monthly quota in Actions minutes (0 = what the plan includes):'; askBudget = 'Monthly budget in USD (0 = no budget):'
-        tabRuns = 'Runs'; tabUsage = 'Usage'; linkUsage = 'Open GitHub usage ↗'
+        tabRuns = 'Runs'; tabUsage = 'Usage'; linkUsage = 'Open GitHub usage ↗'; uServices = 'All services'; uNoUse = 'no usage'; catAI = 'AI credits'; catOther = 'Other'
         uHead = 'Actions minutes · {0}'; uUsed = '{0} min used of {1} included'; uOver = 'Included minutes are used up – {0} min billable ({1})'
         uOk = 'Nothing billable this month'; uFore = 'Forecast for the month: about {0} min'; uForeCost = ' · about {0} billable'
         uDaily = 'Minutes per day'; uRepos = 'Per repository'; uOther = 'Other usage'; uTotal = 'Billable this month: {0}'; uResets = 'The month resets {0}'
@@ -43,7 +43,7 @@ $strings = @{
         uPaceOk = 'ligger godt an, prognose {0} % av kvoten'; uMonthGone = 'Måneden er {0} % gått'; uBudget = 'Budsjett: {0} av {1} ({2} %)'; uBudgetFore = ' · prognose {0}'
         mQuota = 'Sett kvote i minutter…'; mBudget = 'Sett månedlig budsjett…'; badNum = 'Skriv et tall, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedlig budsjett i USD (0 = ingen budsjett):'
-        tabRuns = 'Kjøringer'; tabUsage = 'Forbruk'; linkUsage = 'Åpne GitHub-forbruk ↗'
+        tabRuns = 'Kjøringer'; tabUsage = 'Forbruk'; linkUsage = 'Åpne GitHub-forbruk ↗'; uServices = 'Alle tjenester'; uNoUse = 'ingen bruk'; catAI = 'AI-kreditter'; catOther = 'Annet'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brukt av {1} inkludert'; uOver = 'Inkluderte minutter er brukt opp – {0} min å betale for ({1})'
         uOk = 'Ingenting å betale denne måneden'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} å betale'
         uDaily = 'Minutter per dag'; uRepos = 'Per repo'; uOther = 'Annet forbruk'; uTotal = 'Å betale denne måneden: {0}'; uResets = 'Måneden nullstilles {0}'
@@ -64,7 +64,7 @@ $strings = @{
         uPaceOk = 'ligger bra till, prognos {0} % av kvoten'; uMonthGone = 'Månaden är {0} % förbi'; uBudget = 'Budget: {0} av {1} ({2} %)'; uBudgetFore = ' · prognos {0}'
         mQuota = 'Ange kvot i minuter…'; mBudget = 'Ange månadsbudget…'; badNum = 'Skriv ett tal, till exempel 3000.'
         askQuota = 'Månatlig kvot i Actions-minuter (0 = det planen inkluderar):'; askBudget = 'Månatlig budget i USD (0 = ingen budget):'
-        tabRuns = 'Körningar'; tabUsage = 'Förbrukning'; linkUsage = 'Öppna GitHub-förbrukning ↗'
+        tabRuns = 'Körningar'; tabUsage = 'Förbrukning'; linkUsage = 'Öppna GitHub-förbrukning ↗'; uServices = 'Alla tjänster'; uNoUse = 'ingen användning'; catAI = 'AI-krediter'; catOther = 'Övrigt'
         uHead = 'Actions-minuter · {0}'; uUsed = '{0} min använda av {1} inkluderade'; uOver = 'Inkluderade minuter är slut – {0} min att betala för ({1})'
         uOk = 'Inget att betala den här månaden'; uFore = 'Prognos för månaden: ca {0} min'; uForeCost = ' · ca {0} att betala'
         uDaily = 'Minuter per dag'; uRepos = 'Per repo'; uOther = 'Annan förbrukning'; uTotal = 'Att betala den här månaden: {0}'; uResets = 'Månaden nollställs {0}'
@@ -85,7 +85,7 @@ $strings = @{
         uPaceOk = 'ligger godt, prognose {0} % af kvoten'; uMonthGone = 'Måneden er {0} % gået'; uBudget = 'Budget: {0} af {1} ({2} %)'; uBudgetFore = ' · prognose {0}'
         mQuota = 'Sæt kvote i minutter…'; mBudget = 'Sæt månedligt budget…'; badNum = 'Skriv et tal, for eksempel 3000.'
         askQuota = 'Månedlig kvote i Actions-minutter (0 = det planen inkluderer):'; askBudget = 'Månedligt budget i USD (0 = intet budget):'
-        tabRuns = 'Kørsler'; tabUsage = 'Forbrug'; linkUsage = 'Åbn GitHub-forbrug ↗'
+        tabRuns = 'Kørsler'; tabUsage = 'Forbrug'; linkUsage = 'Åbn GitHub-forbrug ↗'; uServices = 'Alle tjenester'; uNoUse = 'intet forbrug'; catAI = 'AI-kreditter'; catOther = 'Andet'
         uHead = 'Actions-minutter · {0}'; uUsed = '{0} min brugt af {1} inkluderet'; uOver = 'Inkluderede minutter er brugt op – {0} min at betale for ({1})'
         uOk = 'Intet at betale denne måned'; uFore = 'Prognose for måneden: ca. {0} min'; uForeCost = ' · ca. {0} at betale'
         uDaily = 'Minutter pr. dag'; uRepos = 'Pr. repo'; uOther = 'Andet forbrug'; uTotal = 'At betale denne måned: {0}'; uResets = 'Måneden nulstilles {0}'
@@ -247,20 +247,23 @@ $script:cycle = $null
 $script:since = 999
 
 # ---------- usage (GitHub billing) ----------
-$script:usage = @{ summary = $null; items = $null; at = $null; err = $null; pending = 0; user = $null }
+$script:usage = @{ summary = $null; items = $null; premium = @(); at = $null; err = $null; pending = 0; user = $null }
 $cultures = @{ en = 'en-US'; no = 'nb-NO'; sv = 'sv-SE'; da = 'da-DK' }
 function Get-Culture2 { try { [Globalization.CultureInfo]::GetCultureInfo($cultures[[string]$cfg.language]) } catch { $inv } }
 function Format-Money($v) { '$' + ([double]$v).ToString('N2', $inv) }
 function Format-Num($v) { ([double]$v).ToString('N0', (Get-Culture2)) }
 
 function Receive-Usage($out, $err, $code, $ctx) {
-    if ($code -ne 0) {
+    if ($code -ne 0 -and $ctx.kind -eq 'premium') {
+        # The AI credits report is optional (not every account has it); a failure there is not an error for the tab
+        $script:usage.premium = @()
+    } elseif ($code -ne 0) {
         $m = ([string]$err).Trim()
         $script:usage.err = $(if ($m -match '403|404|scope|Resource not accessible') { T 'uScope' } else { (T 'uErr') -f $(if ($m.Length -gt 100) { $m.Substring(0, 100) } else { $m }) })
     } else {
         try {
             $parsed = $out | ConvertFrom-Json
-            if ($ctx.kind -eq 'summary') { $script:usage.summary = $parsed } else { $script:usage.items = @($parsed.usageItems) }
+            if ($ctx.kind -eq 'summary') { $script:usage.summary = $parsed } elseif ($ctx.kind -eq 'premium') { $script:usage.premium = @($parsed.usageItems) } else { $script:usage.items = @($parsed.usageItems) }
             $script:usage.err = $null
         } catch { $script:usage.err = (T 'uErr') -f 'JSON' }
     }
@@ -270,7 +273,8 @@ function Receive-Usage($out, $err, $code, $ctx) {
 function Start-UsageFetch {
     $now = (Get-Date).ToUniversalTime()
     $u = $script:usage.user
-    $script:usage.pending = 2
+    $script:usage.pending = 3
+    Start-Gh "api users/$u/settings/billing/premium_request/usage" ${function:Receive-Usage} @{ kind = 'premium' }
     Start-Gh "api users/$u/settings/billing/usage/summary" ${function:Receive-Usage} @{ kind = 'summary' }
     Start-Gh "api `"users/$u/settings/billing/usage?year=$($now.Year)&month=$($now.Month)`"" ${function:Receive-Usage} @{ kind = 'items' }
 }
@@ -279,7 +283,7 @@ function Refresh-Usage {
     $fx = $env:CISTATUS_USAGE_FIXTURE
     if ($fx -and (Test-Path $fx)) {
         $f = Get-Content $fx -Raw -Encoding UTF8 | ConvertFrom-Json
-        $script:usage.summary = $f.summary; $script:usage.items = @($f.items); $script:usage.at = Get-Date; $script:usage.err = $null; Render; return
+        $script:usage.summary = $f.summary; $script:usage.items = @($f.items); $script:usage.premium = @($f.premium); $script:usage.at = Get-Date; $script:usage.err = $null; Render; return
     }
     if (-not $gh) { Render; return }
     $script:usage.pending = 1; Render
@@ -311,13 +315,13 @@ function Render-Usage {
     $month = (Get-Date).ToUniversalTime()
     $el.uHead.Text = (T 'uHead') -f $month.ToString('MMMM yyyy', $ci)
     if ($u.err) { $el.uNote.Text = $u.err; $el.uNote.Foreground = Br $colors.fail; $el.uNote.Visibility = 'Visible' }
-    $has = $u.summary -and $u.summary.usageItems
+    $has = [bool]$u.summary
     if (-not $has) {
         $el.uUsedBar.Width = 0; $el.uPace.Margin = '0,-2,0,-2'; $el.uSub.Text = $(if ($u.pending -gt 0) { T 'uLoading' } elseif (-not $u.err) { T 'uNone' } else { '' })
         $el.uCost.Text = ''; $el.uFore.Text = ''; $el.uDailyHead.Text = ''; $el.uReposHead.Text = ''; $el.uOtherHead.Text = ''
         return
     }
-    $items = @($u.summary.usageItems)
+    $items = @($u.summary.usageItems | Where-Object { $_ })
     $mins = @($items | Where-Object { $_.product -eq 'Actions' -and $_.unitType -eq 'minutes' })
     $gross = [double](($mins | Measure-Object grossQuantity -Sum).Sum)
     $disc = [double](($mins | Measure-Object discountQuantity -Sum).Sum)
@@ -379,23 +383,64 @@ function Render-Usage {
         }
     } else { $el.uDailyHead.Text = ''; $el.uReposHead.Text = '' }
 
-    # Everything else in the summary (storage, Copilot, Packages, Codespaces ...) with what is billable
-    $others = @($items | Where-Object { -not ($_.product -eq 'Actions' -and $_.unitType -eq 'minutes') })
-    if ($others.Count) {
-        $el.uOtherHead.Text = T 'uOther'
-        foreach ($o in $others) {
-            $tb = New-Object Windows.Controls.TextBlock; $tb.FontSize = 13; $tb.Foreground = Br '#BBBBBB'
-            $line = '{0}  ·  {1} {2}' -f (([string]$o.sku) -replace '_', ' '), (Format-Num ([math]::Round([double]$o.grossQuantity, 1))), $o.unitType
-            if ([double]$o.netAmount -gt 0.004) { $line += '  ·  ' + ((T 'uBillable') -f (Format-Money $o.netAmount)) }
-            $tb.Text = $line; [void]$el.uOther.Children.Add($tb)
+    # Every service on its own row, also when nothing was used: Actions, Packages, Git LFS, Codespaces and all AI credit SKUs.
+    # Quantities and billable amounts come straight from the billing report; whatever fits no row ends up under Other.
+    $unitNames = @{ 'minutes' = 'min'; 'gigabyte-hours' = 'GB-h'; 'gigabytes' = 'GB'; 'core-hours' = 'core-h'; 'requests' = 'requests'; 'hours' = 'h' }
+    $aiSkus = @{}
+    $all = @()
+    foreach ($pi in @($u.premium)) { if ($pi) { $all += $pi; $aiSkus[[string]$pi.sku] = $true } }
+    foreach ($si in $items) { if (-not $aiSkus.ContainsKey([string]$si.sku) -or [string]$si.product -notmatch 'copilot|model|spark|premium|credit') { $all += $si } }
+    $catDefs = @(
+        @{ name = 'Actions'; rx = '^actions' }, @{ name = 'Packages'; rx = 'packages' }, @{ name = 'Git LFS'; rx = 'lfs' },
+        @{ name = 'Codespaces'; rx = 'codespaces' }, @{ name = (T 'catAI'); rx = 'copilot|model|spark|premium|credit|inference' }
+    )
+    $rows = [ordered]@{}
+    foreach ($cd in $catDefs) { $rows[$cd.name] = New-Object System.Collections.ArrayList }
+    $rows[(T 'catOther')] = New-Object System.Collections.ArrayList
+    foreach ($it in $all) {
+        $hay = ([string]$it.product + ' ' + [string]$it.sku).ToLowerInvariant()
+        $target = T 'catOther'
+        foreach ($cd in $catDefs) { if ($hay -match $cd.rx) { $target = $cd.name; break } }
+        [void]$rows[$target].Add($it)
+    }
+    $el.uOtherHead.Text = T 'uServices'
+    foreach ($name in $rows.Keys) {
+        $list = @($rows[$name])
+        if ($name -eq (T 'catOther') -and $list.Count -eq 0) { continue }
+        $qty = @()
+        foreach ($it in $list) {
+            $g = [double]$it.grossQuantity
+            if ($g -gt 0) {
+                $un = [string]$it.unitType; if ($unitNames.ContainsKey($un.ToLowerInvariant())) { $un = $unitNames[$un.ToLowerInvariant()] }
+                $gt = if ($g -ge 100) { Format-Num $g } else { $g.ToString('0.##', (Get-Culture2)) }
+                $qty += ('{0} {1}' -f $gt, $un)
+            }
         }
-    } else { $el.uOtherHead.Text = '' }
-    $total = [double](($items | Measure-Object netAmount -Sum).Sum)
+        $netA = [double](($list | Measure-Object netAmount -Sum).Sum)
+        $dotColor = if ($netA -gt 0.004) { $colors.fail } elseif ($qty.Count) { $colors.running } else { $colors.queued }
+        $g2 = New-Object Windows.Controls.Grid; $g2.Margin = '0,2,0,2'
+        $cA = New-Object Windows.Controls.ColumnDefinition; $cA.Width = 118
+        $cB = New-Object Windows.Controls.ColumnDefinition; $cB.Width = '*'
+        $cC = New-Object Windows.Controls.ColumnDefinition; $cC.Width = 'Auto'
+        foreach ($cc in $cA, $cB, $cC) { [void]$g2.ColumnDefinitions.Add($cc) }
+        $nm = New-Object Windows.Controls.StackPanel; $nm.Orientation = 'Horizontal'
+        $dt = New-Object Windows.Shapes.Ellipse; $dt.Width = 8; $dt.Height = 8; $dt.Margin = '0,1,8,0'; $dt.Fill = Br $dotColor
+        $nt = New-Object Windows.Controls.TextBlock; $nt.Text = $name; $nt.FontSize = 13; $nt.Foreground = Br '#DDDDDD'
+        [void]$nm.Children.Add($dt); [void]$nm.Children.Add($nt)
+        $qt = New-Object Windows.Controls.TextBlock; $qt.FontSize = 13; $qt.TextTrimming = 'CharacterEllipsis'
+        $qt.Text = $(if ($qty.Count) { $qty -join ' · ' } else { T 'uNoUse' }); $qt.Foreground = Br $(if ($qty.Count) { '#BBBBBB' } else { '#777777' })
+        $bt = New-Object Windows.Controls.TextBlock; $bt.FontSize = 13; $bt.Margin = '10,0,0,0'
+        if ($netA -gt 0.004) { $bt.Text = Format-Money $netA; $bt.Foreground = Br $colors.fail } else { $bt.Text = '$0.00'; $bt.Foreground = Br '#777777' }
+        [Windows.Controls.Grid]::SetColumn($nm, 0); [Windows.Controls.Grid]::SetColumn($qt, 1); [Windows.Controls.Grid]::SetColumn($bt, 2)
+        [void]$g2.Children.Add($nm); [void]$g2.Children.Add($qt); [void]$g2.Children.Add($bt)
+        [void]$el.uOther.Children.Add($g2)
+    }
+    $total = [double](($all | Measure-Object netAmount -Sum).Sum)
     if ($total -gt 0.004) { $el.uCost.Text += "`n" + ((T 'uTotal') -f (Format-Money $total)) }
     # Monthly budget in dollars (menu): spending so far against the budget, with the same month marker
     $bud = [double]$cfg.budgetUsd
     if ($bud -gt 0) {
-        $otherNet = [double](($others | Measure-Object netAmount -Sum).Sum)
+        $otherNet = [double](($all | Where-Object { -not ($_.product -eq 'Actions' -and $_.unitType -eq 'minutes') } | Measure-Object netAmount -Sum).Sum)
         $fcTotal = [math]::Max($total, $fc + $otherNet)
         $bstate = if ($total -ge $bud) { 'fail' } elseif ($fcTotal -gt $bud) { 'running' } else { 'ok' }
         $el.uTrack2.Visibility = 'Visible'
