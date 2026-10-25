@@ -45,7 +45,11 @@ Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
 New-Item -ItemType Directory -Force $dest | Out-Null
 foreach ($f in 'CIStatus.ps1', 'Launch.vbs', 'uninstall.ps1') {
     if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot $f))) { Copy-Item (Join-Path $PSScriptRoot $f) (Join-Path $dest $f) -Force }
-    else { Invoke-WebRequest "$base/$f" -OutFile (Join-Path $dest $f) -UseBasicParsing }
+    else {
+        # The GitHub API is not cached like raw.githubusercontent.com (which can be a few minutes behind a push), so a fresh version is installed at once; raw is the fallback
+        try { Invoke-WebRequest "https://api.github.com/repos/saysphilippe/CIStatus/contents/${f}?ref=main" -Headers @{ Accept = 'application/vnd.github.raw'; 'User-Agent' = 'CIStatus-installer' } -OutFile (Join-Path $dest $f) -UseBasicParsing }
+        catch { Invoke-WebRequest "$base/$f" -OutFile (Join-Path $dest $f) -UseBasicParsing }
+    }
 }
 $cfg | ConvertTo-Json | Set-Content $cfgPath -Encoding UTF8
 

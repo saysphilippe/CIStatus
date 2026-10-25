@@ -445,12 +445,13 @@ function Render-Usage {
 # ---------- updates ----------
 function Start-Update {
     $l = if ($cfg.language -in @('en', 'no', 'sv', 'da')) { $cfg.language } else { 'en' }
-    $c = "`$env:CISTATUS_LANG = '$l'; irm https://raw.githubusercontent.com/saysphilippe/CIStatus/main/install.ps1 | iex"
+    $c = "`$env:CISTATUS_LANG = '$l'; `$h = @{ Accept = 'application/vnd.github.raw'; 'User-Agent' = 'CIStatus' }; `$s = try { irm -Headers `$h 'https://api.github.com/repos/saysphilippe/CIStatus/contents/install.ps1?ref=main' } catch { irm 'https://raw.githubusercontent.com/saysphilippe/CIStatus/main/install.ps1' }; iex `$s"
     Start-Process powershell.exe -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $c
 }
 # The widget compares itself with the file on GitHub (ignoring line endings and BOM). A .NET task fetches it; the one-second timer picks it up.
 $script:updateAvailable = ($env:CISTATUS_FAKEUPDATE -eq '1')
 $script:updTask = $null
+$script:updHttp = $null
 $script:updCheckedAt = [datetime]::MinValue
 $script:http = $null
 function Get-NormHash($text) {
@@ -459,9 +460,13 @@ function Get-NormHash($text) {
 }
 function Start-UpdateCheck {
     if ($script:updTask -or -not $scriptPath -or $env:CISTATUS_FAKEUPDATE) { return }
-    if (-not $script:http) { $script:http = New-Object Net.Http.HttpClient; $script:http.Timeout = [TimeSpan]::FromSeconds(20) }
+    if (-not $script:updHttp) {
+        $script:updHttp = New-Object Net.Http.HttpClient; $script:updHttp.Timeout = [TimeSpan]::FromSeconds(20)
+        [void]$script:updHttp.DefaultRequestHeaders.UserAgent.ParseAdd('CIStatus'); [void]$script:updHttp.DefaultRequestHeaders.Accept.ParseAdd('application/vnd.github.raw')
+    }
     $script:updCheckedAt = Get-Date
-    $script:updTask = $script:http.GetStringAsync('https://raw.githubusercontent.com/saysphilippe/CIStatus/main/CIStatus.ps1?v=' + [guid]::NewGuid().ToString('N'))
+    # The API is not cached like raw.githubusercontent.com, which can be a few minutes behind a push
+    $script:updTask = $script:updHttp.GetStringAsync('https://api.github.com/repos/saysphilippe/CIStatus/contents/CIStatus.ps1?ref=main')
 }
 function Receive-UpdateCheck {
     if (-not $script:updTask -or -not $script:updTask.IsCompleted) { return }
