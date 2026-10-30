@@ -40,8 +40,9 @@ $strings = @{
         mTopmost = 'Always on top'; mLanguage = 'Language'; mClose = 'Close'
         tabE2E = 'E2E'; e2eHelp = 'Browser tests (Playwright) are not part of the pipeline. Start them here when you need them.'
         e2eRel = 'Relevant tests'; e2eRelSub = 'Only the tests that belong to the files changed in the last commit'; e2eAll = 'All tests'; e2eAllSub = 'Everything, split into 4 parts that run at the same time'
-        e2eSome = 'Choose tests…'; e2eSomeSub = 'Type parts of test names, for example kjop a11y'
-        askE2E = 'Tests (parts of file names in tests/e2e, e.g. kjop a11y):'; e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
+        e2eSome = 'Choose tests…'; e2eSomeSub = 'Tick the tests you want to run'
+        e2ePick = 'Tick the tests to run'; e2eSelAll = 'Select all'; e2eSelNone = 'Select none'; e2eRunN = 'Run {0} tests'; e2eCancel = 'Cancel'; e2eLoadingList = 'Reading the test list…'; e2eListFail = 'Could not read the test list: {0}'
+        e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
         noGh = 'The GitHub CLI (gh) was not found. Install it and run: gh auth login'; ghErr = 'Could not read {0}: {1}'
     }
@@ -67,8 +68,9 @@ $strings = @{
         mTopmost = 'Alltid øverst'; mLanguage = 'Språk'; mClose = 'Lukk'
         tabE2E = 'E2E'; e2eHelp = 'Nettleser-testene (Playwright) er ikke en del av pipelinen. Start dem her ved behov.'
         e2eRel = 'Relevante tester'; e2eRelSub = 'Bare testene som hører til filene som er endret i siste commit'; e2eAll = 'Alle tester'; e2eAllSub = 'Alt, delt i 4 deler som kjører samtidig'
-        e2eSome = 'Velg tester…'; e2eSomeSub = 'Skriv deler av testnavn, for eksempel kjop a11y'
-        askE2E = 'Tester (deler av filnavn i tests/e2e, f.eks. kjop a11y):'; e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
+        e2eSome = 'Velg tester…'; e2eSomeSub = 'Kryss av testene du vil kjøre'
+        e2ePick = 'Kryss av testene som skal kjøres'; e2eSelAll = 'Velg alle'; e2eSelNone = 'Fjern alle'; e2eRunN = 'Kjør {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Leser testlisten…'; e2eListFail = 'Kunne ikke lese testlisten: {0}'
+        e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) ble ikke funnet. Installer den og kjør: gh auth login'; ghErr = 'Kunne ikke lese {0}: {1}'
     }
@@ -94,8 +96,9 @@ $strings = @{
         mTopmost = 'Alltid överst'; mLanguage = 'Språk'; mClose = 'Stäng'
         tabE2E = 'E2E'; e2eHelp = 'Webbläsartesterna (Playwright) ingår inte i pipelinen. Starta dem här vid behov.'
         e2eRel = 'Relevanta tester'; e2eRelSub = 'Bara testerna som hör till filerna som ändrades i senaste committen'; e2eAll = 'Alla tester'; e2eAllSub = 'Allt, delat i 4 delar som körs samtidigt'
-        e2eSome = 'Välj tester…'; e2eSomeSub = 'Skriv delar av testnamn, till exempel kjop a11y'
-        askE2E = 'Tester (delar av filnamn i tests/e2e, t.ex. kjop a11y):'; e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
+        e2eSome = 'Välj tester…'; e2eSomeSub = 'Kryssa i testerna du vill köra'
+        e2ePick = 'Kryssa i testerna som ska köras'; e2eSelAll = 'Markera alla'; e2eSelNone = 'Avmarkera alla'; e2eRunN = 'Kör {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Läser testlistan…'; e2eListFail = 'Kunde inte läsa testlistan: {0}'
+        e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) hittades inte. Installera den och kör: gh auth login'; ghErr = 'Kunde inte läsa {0}: {1}'
     }
@@ -121,8 +124,9 @@ $strings = @{
         mTopmost = 'Altid øverst'; mLanguage = 'Sprog'; mClose = 'Luk'
         tabE2E = 'E2E'; e2eHelp = 'Browsertestene (Playwright) er ikke en del af pipelinen. Start dem her ved behov.'
         e2eRel = 'Relevante tests'; e2eRelSub = 'Kun testene der hører til filerne ændret i seneste commit'; e2eAll = 'Alle tests'; e2eAllSub = 'Alt, delt i 4 dele der kører samtidig'
-        e2eSome = 'Vælg tests…'; e2eSomeSub = 'Skriv dele af testnavne, for eksempel kjop a11y'
-        askE2E = 'Tests (dele af filnavne i tests/e2e, f.eks. kjop a11y):'; e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
+        e2eSome = 'Vælg tests…'; e2eSomeSub = 'Afkryds de tests du vil køre'
+        e2ePick = 'Afkryds de tests der skal køre'; e2eSelAll = 'Vælg alle'; e2eSelNone = 'Fravælg alle'; e2eRunN = 'Kør {0} tests'; e2eCancel = 'Annuller'; e2eLoadingList = 'Læser testlisten…'; e2eListFail = 'Kunne ikke læse testlisten: {0}'
+        e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) blev ikke fundet. Installer den og kør: gh auth login'; ghErr = 'Kunne ikke læse {0}: {1}'
     }
@@ -731,9 +735,72 @@ function Start-E2E($tests) {
         else { $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }; Set-E2ENote ((T 'e2eFail') -f $m) $colors.fail }
     } @{ tests = $tests }
 }
-function Ask-E2E {
-    $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askE2E'), (T 'title'), '')).Trim()
-    if ($v) { Start-E2E $v }
+# "Choose tests": a list with a check box per test. The names and descriptions come from tests/e2e/oversikt.json in the repo.
+$script:e2eList = $null; $script:e2eListAt = [datetime]::MinValue
+function Show-E2EPicker($list) {
+    [xml]$px = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        Width="560" Height="620" Background="#1E1E1E" WindowStartupLocation="CenterScreen" ShowInTaskbar="False" Topmost="True">
+  <DockPanel Margin="16">
+    <TextBlock Name="pTitle" DockPanel.Dock="Top" Foreground="#D97757" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6"/>
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBlock Name="pAll" Foreground="#6A9BCC" FontSize="12" Cursor="Hand" TextDecorations="Underline" Background="Transparent"/>
+      <TextBlock Name="pNone" Foreground="#6A9BCC" FontSize="12" Cursor="Hand" TextDecorations="Underline" Background="Transparent" Margin="14,0,0,0"/>
+    </StackPanel>
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+      <Button Name="pCancel" Padding="16,6" Margin="0,0,8,0" IsCancel="True"/>
+      <Button Name="pRun" Padding="16,6" IsDefault="True"/>
+    </StackPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Name="pList"/></ScrollViewer>
+  </DockPanel>
+</Window>
+'@
+    $dlg = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $px))
+    $f = @{}
+    'pTitle', 'pAll', 'pNone', 'pList', 'pCancel', 'pRun' | ForEach-Object { $f[$_] = $dlg.FindName($_) }
+    $dlg.Title = T 'e2eSome'; $f.pTitle.Text = T 'e2ePick'; $f.pAll.Text = T 'e2eSelAll'; $f.pNone.Text = T 'e2eSelNone'; $f.pCancel.Content = T 'e2eCancel'
+    $boxes = New-Object System.Collections.ArrayList
+    $upd = {
+        $n = @($boxes | Where-Object { $_.IsChecked }).Count
+        $f.pRun.Content = (T 'e2eRunN') -f $n; $f.pRun.IsEnabled = ($n -gt 0)
+    }.GetNewClosure()
+    foreach ($it in $list) {
+        $cb = New-Object Windows.Controls.CheckBox
+        $cb.Tag = [string]$it.name; $cb.Margin = '0,4,0,4'
+        $sp = New-Object Windows.Controls.StackPanel
+        $t1 = New-Object Windows.Controls.TextBlock; $t1.Text = [string]$it.title; $t1.TextWrapping = 'Wrap'; $t1.FontSize = 13; $t1.Foreground = Br '#EEEEEE'
+        $t2 = New-Object Windows.Controls.TextBlock; $t2.Text = [string]$it.name; $t2.FontSize = 11; $t2.Foreground = Br '#888888'
+        [void]$sp.Children.Add($t1); [void]$sp.Children.Add($t2)
+        $cb.Content = $sp
+        $cb.Add_Checked($upd); $cb.Add_Unchecked($upd)
+        [void]$boxes.Add($cb); [void]$f.pList.Children.Add($cb)
+    }
+    $f.pAll.Add_MouseLeftButtonDown({ foreach ($b in $boxes) { $b.IsChecked = $true } }.GetNewClosure())
+    $f.pNone.Add_MouseLeftButtonDown({ foreach ($b in $boxes) { $b.IsChecked = $false } }.GetNewClosure())
+    $f.pRun.Add_Click({ $dlg.DialogResult = $true }.GetNewClosure())
+    & $upd
+    if ($dlg.ShowDialog()) {
+        $picked = @($boxes | Where-Object { $_.IsChecked } | ForEach-Object { [string]$_.Tag })
+        if ($picked.Count -eq $boxes.Count) { Start-E2E 'alle' } elseif ($picked.Count -gt 0) { Start-E2E ($picked -join ' ') }
+    }
+}
+function Open-E2EPicker {
+    if ($script:e2eList -and ((Get-Date) - $script:e2eListAt).TotalMinutes -lt 10) { Show-E2EPicker $script:e2eList; return }
+    $repo = if ($cfg.e2eRepo) { [string]$cfg.e2eRepo } else { [string]@(Get-Repos)[0] }
+    if (-not $gh -or -not $repo) { Set-E2ENote (T 'noGh') $colors.fail; return }
+    Set-E2ENote (T 'e2eLoadingList') $colors.running
+    Start-Gh "api repos/$repo/contents/tests/e2e/oversikt.json -H `"Accept: application/vnd.github.raw`"" {
+        param($out, $err, $code, $ctx)
+        $list = $null
+        if ($code -eq 0) { try { $parsed = $out | ConvertFrom-Json; $list = @($parsed) } catch {} }
+        if ($list -and $list.Count) {
+            $script:e2eList = $list; $script:e2eListAt = Get-Date; $script:e2eNoteText = $null; Render
+            Show-E2EPicker $list
+        } else {
+            $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }
+            Set-E2ENote ((T 'e2eListFail') -f $m) $colors.fail
+        }
+    } @{}
 }
 
 # ---------- menu ----------
@@ -806,7 +873,7 @@ $win.Add_MouseLeftButtonDown({
         elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
         elseif ($act -eq 'cmd:update') { Start-Update }
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
-        elseif ($act -eq 'cmd:e2e:ask') { Ask-E2E }
+        elseif ($act -eq 'cmd:e2e:ask') { Open-E2EPicker }
         elseif ($act -like 'cmd:e2e:*') { Start-E2E ($act -replace '^cmd:e2e:', '') }
         elseif ($act -like 'cmd:svc:*') { $script:usageSel = $act -replace '^cmd:svc:', ''; $cfg.usageSel = $script:usageSel; Save-Config; Render }
         elseif ($act) { Start-Process $act }
