@@ -38,6 +38,10 @@ $strings = @{
         jobs = 'jobs {0}/{1}'; minimize = 'Minimize'; restore = 'Show all runs'; nothing = 'Nothing running'
         mRefresh = 'Refresh now'; mMinimize = 'Minimize'; mUpdate = 'Update the widget'; mAddRepo = 'Add repository…'; mRemoveRepo = 'Remove repository'
         mTopmost = 'Always on top'; mLanguage = 'Language'; mClose = 'Close'
+        tabE2E = 'E2E'; e2eHelp = 'Browser tests (Playwright) are not part of the pipeline. Start them here when you need them.'
+        e2eRel = 'Relevant tests'; e2eRelSub = 'Only the tests that belong to the files changed in the last commit'; e2eAll = 'All tests'; e2eAllSub = 'Everything, split into 4 parts that run at the same time'
+        e2eSome = 'Choose tests…'; e2eSomeSub = 'Type parts of test names, for example kjop a11y'
+        askE2E = 'Tests (parts of file names in tests/e2e, e.g. kjop a11y):'; e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
         noGh = 'The GitHub CLI (gh) was not found. Install it and run: gh auth login'; ghErr = 'Could not read {0}: {1}'
     }
@@ -61,6 +65,10 @@ $strings = @{
         jobs = 'jobber {0}/{1}'; minimize = 'Minimer'; restore = 'Vis alle kjøringer'; nothing = 'Ingenting kjører'
         mRefresh = 'Oppdater nå'; mMinimize = 'Minimer'; mUpdate = 'Oppdater widgeten'; mAddRepo = 'Legg til repo…'; mRemoveRepo = 'Fjern repo'
         mTopmost = 'Alltid øverst'; mLanguage = 'Språk'; mClose = 'Lukk'
+        tabE2E = 'E2E'; e2eHelp = 'Nettleser-testene (Playwright) er ikke en del av pipelinen. Start dem her ved behov.'
+        e2eRel = 'Relevante tester'; e2eRelSub = 'Bare testene som hører til filene som er endret i siste commit'; e2eAll = 'Alle tester'; e2eAllSub = 'Alt, delt i 4 deler som kjører samtidig'
+        e2eSome = 'Velg tester…'; e2eSomeSub = 'Skriv deler av testnavn, for eksempel kjop a11y'
+        askE2E = 'Tester (deler av filnavn i tests/e2e, f.eks. kjop a11y):'; e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) ble ikke funnet. Installer den og kjør: gh auth login'; ghErr = 'Kunne ikke lese {0}: {1}'
     }
@@ -84,6 +92,10 @@ $strings = @{
         jobs = 'jobb {0}/{1}'; minimize = 'Minimera'; restore = 'Visa alla körningar'; nothing = 'Inget körs'
         mRefresh = 'Uppdatera nu'; mMinimize = 'Minimera'; mUpdate = 'Uppdatera widgeten'; mAddRepo = 'Lägg till repo…'; mRemoveRepo = 'Ta bort repo'
         mTopmost = 'Alltid överst'; mLanguage = 'Språk'; mClose = 'Stäng'
+        tabE2E = 'E2E'; e2eHelp = 'Webbläsartesterna (Playwright) ingår inte i pipelinen. Starta dem här vid behov.'
+        e2eRel = 'Relevanta tester'; e2eRelSub = 'Bara testerna som hör till filerna som ändrades i senaste committen'; e2eAll = 'Alla tester'; e2eAllSub = 'Allt, delat i 4 delar som körs samtidigt'
+        e2eSome = 'Välj tester…'; e2eSomeSub = 'Skriv delar av testnamn, till exempel kjop a11y'
+        askE2E = 'Tester (delar av filnamn i tests/e2e, t.ex. kjop a11y):'; e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) hittades inte. Installera den och kör: gh auth login'; ghErr = 'Kunde inte läsa {0}: {1}'
     }
@@ -107,6 +119,10 @@ $strings = @{
         jobs = 'jobs {0}/{1}'; minimize = 'Minimer'; restore = 'Vis alle kørsler'; nothing = 'Intet kører'
         mRefresh = 'Opdater nu'; mMinimize = 'Minimer'; mUpdate = 'Opdater widgetten'; mAddRepo = 'Tilføj repo…'; mRemoveRepo = 'Fjern repo'
         mTopmost = 'Altid øverst'; mLanguage = 'Sprog'; mClose = 'Luk'
+        tabE2E = 'E2E'; e2eHelp = 'Browsertestene (Playwright) er ikke en del af pipelinen. Start dem her ved behov.'
+        e2eRel = 'Relevante tests'; e2eRelSub = 'Kun testene der hører til filerne ændret i seneste commit'; e2eAll = 'Alle tests'; e2eAllSub = 'Alt, delt i 4 dele der kører samtidig'
+        e2eSome = 'Vælg tests…'; e2eSomeSub = 'Skriv dele af testnavne, for eksempel kjop a11y'
+        askE2E = 'Tests (dele af filnavne i tests/e2e, f.eks. kjop a11y):'; e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
         noGh = 'GitHub CLI (gh) blev ikke fundet. Installer den og kør: gh auth login'; ghErr = 'Kunne ikke læse {0}: {1}'
     }
@@ -206,11 +222,25 @@ function Format-Dur($ts) {
       <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
         <TextBlock Name="tabRuns" FontSize="13" Cursor="Hand" Background="Transparent" Tag="cmd:tab:runs"/>
         <TextBlock Name="tabUsage" FontSize="13" Cursor="Hand" Background="Transparent" Margin="14,0,0,0" Tag="cmd:tab:usage"/>
+        <TextBlock Name="tabE2E" FontSize="13" Cursor="Hand" Background="Transparent" Margin="14,0,0,0" Tag="cmd:tab:e2e"/>
       </StackPanel>
       <StackPanel Name="runsPanel">
       <TextBlock Name="flash" Foreground="#EEE" FontSize="12" Margin="0,0,0,6" TextWrapping="Wrap" Visibility="Collapsed"/>
       <StackPanel Name="rows"/>
       <TextBlock Name="note" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+      </StackPanel>
+      <StackPanel Name="e2ePanel" Visibility="Collapsed">
+        <TextBlock Name="e2eHelp" Foreground="#999999" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <Border CornerRadius="6" Background="#2A2A2A" Padding="10,7" Margin="0,0,0,6" Cursor="Hand" Tag="cmd:e2e:relevante">
+          <StackPanel><TextBlock Name="e2eRel" Foreground="#EEEEEE" FontSize="13" FontWeight="SemiBold"/><TextBlock Name="e2eRelSub" Foreground="#999999" FontSize="12" TextWrapping="Wrap"/></StackPanel>
+        </Border>
+        <Border CornerRadius="6" Background="#2A2A2A" Padding="10,7" Margin="0,0,0,6" Cursor="Hand" Tag="cmd:e2e:alle">
+          <StackPanel><TextBlock Name="e2eAll" Foreground="#EEEEEE" FontSize="13" FontWeight="SemiBold"/><TextBlock Name="e2eAllSub" Foreground="#999999" FontSize="12" TextWrapping="Wrap"/></StackPanel>
+        </Border>
+        <Border CornerRadius="6" Background="#2A2A2A" Padding="10,7" Margin="0,0,0,6" Cursor="Hand" Tag="cmd:e2e:ask">
+          <StackPanel><TextBlock Name="e2eSome" Foreground="#EEEEEE" FontSize="13" FontWeight="SemiBold"/><TextBlock Name="e2eSomeSub" Foreground="#999999" FontSize="12" TextWrapping="Wrap"/></StackPanel>
+        </Border>
+        <TextBlock Name="e2eNote" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
       </StackPanel>
       <StackPanel Name="usagePanel" Visibility="Collapsed">
         <TextBlock Name="uDailyHead" Foreground="#EEE" FontSize="14"/>
@@ -231,7 +261,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -485,8 +515,10 @@ function Show-Tab($t) {
     $cfg.tab = $t; Save-Config
     $el.runsPanel.Visibility = $(if ($t -eq 'runs') { 'Visible' } else { 'Collapsed' })
     $el.usagePanel.Visibility = $(if ($t -eq 'usage') { 'Visible' } else { 'Collapsed' })
+    $el.e2ePanel.Visibility = $(if ($t -eq 'e2e') { 'Visible' } else { 'Collapsed' })
     $el.tabRuns.Foreground = Br $(if ($t -eq 'runs') { '#D97757' } else { '#999999' }); $el.tabRuns.FontWeight = $(if ($t -eq 'runs') { 'SemiBold' } else { 'Normal' })
     $el.tabUsage.Foreground = Br $(if ($t -eq 'usage') { '#D97757' } else { '#999999' }); $el.tabUsage.FontWeight = $(if ($t -eq 'usage') { 'SemiBold' } else { 'Normal' })
+    $el.tabE2E.Foreground = Br $(if ($t -eq 'e2e') { '#D97757' } else { '#999999' }); $el.tabE2E.FontWeight = $(if ($t -eq 'e2e') { 'SemiBold' } else { 'Normal' })
     if ($t -eq 'usage' -and (-not $script:usage.at -or ((Get-Date) - $script:usage.at).TotalSeconds -gt 60)) { Refresh-Usage }
     Render
     if ($win.IsLoaded) { Keep-OnScreen }
@@ -494,7 +526,10 @@ function Show-Tab($t) {
 
 function Render {
     $el.title.Text = T 'title'
-    $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.usageLink.Text = T 'linkUsage'
+    $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.tabE2E.Text = T 'tabE2E'; $el.usageLink.Text = T 'linkUsage'
+    foreach ($k in 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub') { $el[$k].Text = T $k }
+    # The last e2e message stays on the E2E tab for a while
+    if ($script:e2eNoteText -and (Get-Date) -lt $script:e2eNoteUntil) { $el.e2eNote.Text = $script:e2eNoteText; $el.e2eNote.Foreground = Br $script:e2eNoteColor; $el.e2eNote.Visibility = 'Visible' } else { $el.e2eNote.Visibility = 'Collapsed' }
     $el.updNew.Text = T 'updNew'; $el.updNew.Visibility = $(if ($script:updateAvailable) { 'Visible' } else { 'Collapsed' })
     if ($cfg.tab -eq 'usage') { Render-Usage }
     $el.rows.Children.Clear()
@@ -677,6 +712,30 @@ function Set-Minimized($m) {
     Keep-OnScreen
 }
 
+# ---------- e2e tests (the "E2E (manuelt)" workflow in the first watched repo) ----------
+$script:e2eNoteText = $null; $script:e2eNoteColor = '#EEEEEE'; $script:e2eNoteUntil = [datetime]::MinValue
+function Set-E2ENote($text, $color) {
+    $script:e2eNoteText = $text; $script:e2eNoteColor = $color; $script:e2eNoteUntil = (Get-Date).AddSeconds(90)
+    Render
+}
+# $tests: 'relevante', 'alle' or parts of test names (scripts/e2e-relevant.mjs in the repo decides what runs)
+function Start-E2E($tests) {
+    $tests = ([string]$tests -replace '[^A-Za-z0-9 ._-]', '').Trim()
+    if (-not $tests) { $tests = 'relevante' }
+    $repo = if ($cfg.e2eRepo) { [string]$cfg.e2eRepo } else { [string]@(Get-Repos)[0] }
+    if (-not $gh -or -not $repo) { Set-E2ENote (T 'noGh') $colors.fail; return }
+    Set-E2ENote ((T 'e2eStarting') -f $tests) $colors.running
+    Start-Gh "workflow run e2e.yml --repo $repo -f `"tests=$tests`"" {
+        param($out, $err, $code, $ctx)
+        if ($code -eq 0) { Set-E2ENote ((T 'e2eStarted') -f $ctx.tests) $colors.ok; $script:since = 24 }
+        else { $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }; Set-E2ENote ((T 'e2eFail') -f $m) $colors.fail }
+    } @{ tests = $tests }
+}
+function Ask-E2E {
+    $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askE2E'), (T 'title'), '')).Trim()
+    if ($v) { Start-E2E $v }
+}
+
 # ---------- menu ----------
 $menu = New-Object Windows.Controls.ContextMenu
 $menuItems = @{}
@@ -747,6 +806,8 @@ $win.Add_MouseLeftButtonDown({
         elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
         elseif ($act -eq 'cmd:update') { Start-Update }
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
+        elseif ($act -eq 'cmd:e2e:ask') { Ask-E2E }
+        elseif ($act -like 'cmd:e2e:*') { Start-E2E ($act -replace '^cmd:e2e:', '') }
         elseif ($act -like 'cmd:svc:*') { $script:usageSel = $act -replace '^cmd:svc:', ''; $cfg.usageSel = $script:usageSel; Save-Config; Render }
         elseif ($act) { Start-Process $act }
     } elseif ($cfg.minimized) { $cfg.miniLeft = $win.Left; $cfg.miniTop = $win.Top; Save-Config }
@@ -772,7 +833,7 @@ $timer.Add_Tick({
     elseif ($script:runs.Count -gt 0 -and ($script:tick % 5 -eq 0 -or ($cfg.minimized -and $busy))) { Render }
 })
 $timer.Start()
-Show-Tab $(if ($cfg.tab -eq 'usage') { 'usage' } else { 'runs' })
+Show-Tab $(if ($cfg.tab -in 'usage', 'e2e') { $cfg.tab } else { 'runs' })
 Refresh
 if ($cfg.minimized) { Set-Minimized $true } else { Keep-OnScreen }   # a saved position can be on a monitor that is gone
 [void]$win.ShowDialog()
