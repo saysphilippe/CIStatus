@@ -616,6 +616,7 @@ function Render {
     $el.mini.ToolTip = T 'restore'; $el.minBtn.ToolTip = T 'minimize'
     if ($cfg.tab -eq 'usage') { $el.upd.Text = $(if ($script:usage.at) { ((T 'updated') -f $script:usage.at.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T 'uLag') }
     else { $el.upd.Text = $(if ($script:updatedAt) { ((T 'updated') -f $script:updatedAt.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T 'hint') }
+    if ($win.IsLoaded) { Keep-OnScreen }   # the content may have grown or shrunk: back to the anchor
 }
 
 function Complete-Cycle {
@@ -692,14 +693,26 @@ function Get-WinSize {
     $c.Measure((New-Object Windows.Size ([double]::PositiveInfinity), ([double]::PositiveInfinity)))
     @($c.DesiredSize.Width, $c.DesiredSize.Height)
 }
-# Keep the whole window inside the work area (taskbar excluded), e.g. after the Usage tab made it taller
+# The position the user chose (the anchor) is kept apart from where the window is drawn. The window sizes itself to its content, so a run with a long
+# title makes it wider or taller than the screen edge allows and it is shifted to stay on screen. When the content shrinks again the window goes back to the
+# anchor, instead of staying where it was pushed. Minimized and not moved by the user: the bottom right corner, growing left and up.
 $script:dragging = $false
+function Get-Anchor {
+    if ($cfg.minimized) {
+        if ($null -ne $cfg.miniLeft -and $null -ne $cfg.miniTop) { return @([double]$cfg.miniLeft, [double]$cfg.miniTop) }
+        $sz = Get-WinSize; $wa = [Windows.SystemParameters]::WorkArea
+        return @(($wa.Right - $sz[0] - 12), ($wa.Bottom - $sz[1] - 12))
+    }
+    @([double]$cfg.left, [double]$cfg.top)
+}
+# Put the window at its anchor, then keep the whole window inside the work area (taskbar excluded), e.g. after the Usage tab made it taller
 function Keep-OnScreen {
     if ($script:dragging) { return }
     $sz = Get-WinSize
     $wa = [Windows.SystemParameters]::WorkArea
-    $win.Left = [math]::Max($wa.Left, [math]::Min($win.Left, $wa.Right - $sz[0]))
-    $win.Top = [math]::Max($wa.Top, [math]::Min($win.Top, $wa.Bottom - $sz[1]))
+    $a = Get-Anchor
+    $win.Left = [math]::Max($wa.Left, [math]::Min($a[0], $wa.Right - $sz[0]))
+    $win.Top = [math]::Max($wa.Top, [math]::Min($a[1], $wa.Bottom - $sz[1]))
 }
 
 function Set-Minimized($m) {
@@ -707,12 +720,6 @@ function Set-Minimized($m) {
     $el.root.Visibility = $(if ($m) { 'Collapsed' } else { 'Visible' })
     $el.mini.Visibility = $(if ($m) { 'Visible' } else { 'Collapsed' })
     Render
-    $sz = Get-WinSize
-    $wa = [Windows.SystemParameters]::WorkArea
-    if ($m) {
-        if ($null -ne $cfg.miniLeft -and $null -ne $cfg.miniTop) { $win.Left = [double]$cfg.miniLeft; $win.Top = [double]$cfg.miniTop }
-        else { $win.Left = $wa.Right - $sz[0] - 12; $win.Top = $wa.Bottom - $sz[1] - 12 }
-    } else { $win.Left = [double]$cfg.left; $win.Top = [double]$cfg.top }
     Keep-OnScreen
 }
 
@@ -856,6 +863,9 @@ function Set-MenuText {
 }
 Set-MenuText
 $win.ContextMenu = $menu
+
+# Whenever the window changes size (it follows its content), go back to the anchor
+$win.Add_SizeChanged({ if ($win.IsLoaded) { Keep-OnScreen } })
 
 # Drag the window; a click without moving opens the run under the mouse, or minimizes / restores
 $win.Add_MouseLeftButtonDown({
