@@ -142,10 +142,10 @@ $strings = @{
         e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh is not signed in as {0}. Choose GitHub accounts, Sign in another account.'
-        mGh = 'GitHub accounts'; mGhAdd = 'Sign in another account…'; mGhRefresh = 'Refresh accounts'; mGhName = 'Name an account'
+        mGh = 'GitHub accounts'; mGhAdd = 'Sign in another account…'; mGhRefresh = 'Refresh accounts'; mGhName = 'Rename account'
         ghAskLabel = 'Name for the GitHub account {0} (for example Work or Private):'; ghAcctLbl = 'Read with GitHub account:'; fltAll = 'All'
         ghSignIn = 'Sign in to the other GitHub account in the browser. Close this window when you are done, and choose Refresh accounts in CI Status.'
-        mCf = 'Cloudflare accounts'; mCfAdd = 'Add account…'; mCfRemove = 'Remove account'
+        mCf = 'Cloudflare accounts'; mCfAdd = 'Add account…'; mCfRemove = 'Remove account'; mCfName = 'Rename account'
         cfAskLabel = 'Name for this Cloudflare account (for example Work or Private):'; cfAskToken = 'API token (read only):'; cfAdd = 'Add'; cfCancel = 'Cancel'
         cfTokenHelp = 'Create the token at dash.cloudflare.com/profile/api-tokens with Read access to: Workers Scripts, Workers Builds Configuration, Account Analytics and Account Settings. It is stored encrypted for your Windows user only.'
         cfAdded = 'Added: {0}'; cfAddFail = 'Could not add the account: {0}'; cfNoAccess = 'The token cannot see any Cloudflare account.'
@@ -183,10 +183,10 @@ $strings = @{
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh er ikke innlogget som {0}. Velg GitHub-kontoer, Logg inn en annen konto.'
-        mGh = 'GitHub-kontoer'; mGhAdd = 'Logg inn en annen konto…'; mGhRefresh = 'Oppdater kontoer'; mGhName = 'Gi en konto navn'
+        mGh = 'GitHub-kontoer'; mGhAdd = 'Logg inn en annen konto…'; mGhRefresh = 'Oppdater kontoer'; mGhName = 'Gi konto nytt navn'
         ghAskLabel = 'Navn på GitHub-kontoen {0} (for eksempel Jobb eller Privat):'; ghAcctLbl = 'Les med GitHub-konto:'; fltAll = 'Alle'
         ghSignIn = 'Logg inn på den andre GitHub-kontoen i nettleseren. Lukk vinduet når du er ferdig, og velg Oppdater kontoer i CI Status.'
-        mCf = 'Cloudflare-kontoer'; mCfAdd = 'Legg til konto…'; mCfRemove = 'Fjern konto'
+        mCf = 'Cloudflare-kontoer'; mCfAdd = 'Legg til konto…'; mCfRemove = 'Fjern konto'; mCfName = 'Gi konto nytt navn'
         cfAskLabel = 'Navn på denne Cloudflare-kontoen (for eksempel Jobb eller Privat):'; cfAskToken = 'API-token (bare lesing):'; cfAdd = 'Legg til'; cfCancel = 'Avbryt'
         cfTokenHelp = 'Lag tokenet på dash.cloudflare.com/profile/api-tokens med lesetilgang (Read) til: Workers Scripts, Workers Builds Configuration, Account Analytics og Account Settings. Det lagres kryptert, bare for din Windows-bruker.'
         cfAdded = 'Lagt til: {0}'; cfAddFail = 'Kunne ikke legge til kontoen: {0}'; cfNoAccess = 'Tokenet ser ingen Cloudflare-konto.'
@@ -224,10 +224,10 @@ $strings = @{
         e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh är inte inloggad som {0}. Välj GitHub-konton, Logga in ett annat konto.'
-        mGh = 'GitHub-konton'; mGhAdd = 'Logga in ett annat konto…'; mGhRefresh = 'Uppdatera konton'; mGhName = 'Namnge ett konto'
+        mGh = 'GitHub-konton'; mGhAdd = 'Logga in ett annat konto…'; mGhRefresh = 'Uppdatera konton'; mGhName = 'Byt namn på konto'
         ghAskLabel = 'Namn på GitHub-kontot {0} (till exempel Jobb eller Privat):'; ghAcctLbl = 'Läs med GitHub-konto:'; fltAll = 'Alla'
         ghSignIn = 'Logga in på det andra GitHub-kontot i webbläsaren. Stäng fönstret när du är klar och välj Uppdatera konton i CI Status.'
-        mCf = 'Cloudflare-konton'; mCfAdd = 'Lägg till konto…'; mCfRemove = 'Ta bort konto'
+        mCf = 'Cloudflare-konton'; mCfAdd = 'Lägg till konto…'; mCfRemove = 'Ta bort konto'; mCfName = 'Byt namn på konto'
         cfAskLabel = 'Namn på det här Cloudflare-kontot (till exempel Jobb eller Privat):'; cfAskToken = 'API-token (endast läsning):'; cfAdd = 'Lägg till'; cfCancel = 'Avbryt'
         cfTokenHelp = 'Skapa token på dash.cloudflare.com/profile/api-tokens med läsbehörighet (Read) till: Workers Scripts, Workers Builds Configuration, Account Analytics och Account Settings. Den lagras krypterad, bara för din Windows-användare.'
         cfAdded = 'Tillagt: {0}'; cfAddFail = 'Kunde inte lägga till kontot: {0}'; cfNoAccess = 'Token ser inget Cloudflare-konto.'
@@ -265,10 +265,10 @@ $strings = @{
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh er ikke logget ind som {0}. Vælg GitHub-konti, Log ind på en anden konto.'
-        mGh = 'GitHub-konti'; mGhAdd = 'Log ind på en anden konto…'; mGhRefresh = 'Opdater konti'; mGhName = 'Navngiv en konto'
+        mGh = 'GitHub-konti'; mGhAdd = 'Log ind på en anden konto…'; mGhRefresh = 'Opdater konti'; mGhName = 'Omdøb konto'
         ghAskLabel = 'Navn på GitHub-kontoen {0} (for eksempel Job eller Privat):'; ghAcctLbl = 'Læs med GitHub-konto:'; fltAll = 'Alle'
         ghSignIn = 'Log ind på den anden GitHub-konto i browseren. Luk vinduet, når du er færdig, og vælg Opdater konti i CI Status.'
-        mCf = 'Cloudflare-konti'; mCfAdd = 'Tilføj konto…'; mCfRemove = 'Fjern konto'
+        mCf = 'Cloudflare-konti'; mCfAdd = 'Tilføj konto…'; mCfRemove = 'Fjern konto'; mCfName = 'Omdøb konto'
         cfAskLabel = 'Navn på denne Cloudflare-konto (for eksempel Job eller Privat):'; cfAskToken = 'API-token (kun læsning):'; cfAdd = 'Tilføj'; cfCancel = 'Annuller'
         cfTokenHelp = 'Opret tokenet på dash.cloudflare.com/profile/api-tokens med læseadgang (Read) til: Workers Scripts, Workers Builds Configuration, Account Analytics og Account Settings. Det gemmes krypteret, kun for din Windows-bruger.'
         cfAdded = 'Tilføjet: {0}'; cfAddFail = 'Kunne ikke tilføje kontoen: {0}'; cfNoAccess = 'Tokenet kan ikke se nogen Cloudflare-konto.'
@@ -1498,6 +1498,22 @@ $ghNameMenu.Add_SubmenuOpened({
 [void]$ghNameMenu.Items.Add((New-Object Windows.Controls.MenuItem))
 $cfMenu = AddItem 'mCf' {}
 AddItem 'mCfAdd' { Add-CfAccount } $cfMenu | Out-Null
+$cfNameMenu = AddItem 'mCfName' {} $cfMenu
+$cfNameMenu.Add_SubmenuOpened({
+    $cfNameMenu.Items.Clear()
+    foreach ($a in (Get-CfAccounts)) {
+        $mi = New-Object Windows.Controls.MenuItem; $mi.Header = [string]$a.label; $mi.Tag = [string]$a.id
+        $mi.Add_Click({
+            $id = $this.Tag
+            $acct = Get-CfAccounts | Where-Object { [string]$_.id -eq $id } | Select-Object -First 1
+            $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'cfAskLabel'), (T 'title'), [string]$acct.label)).Trim()
+            if (-not $v) { return }
+            $acct.label = $v; Save-Config; Render
+        })
+        [void]$cfNameMenu.Items.Add($mi)
+    }
+})
+[void]$cfNameMenu.Items.Add((New-Object Windows.Controls.MenuItem))
 $cfRemoveMenu = AddItem 'mCfRemove' {} $cfMenu
 $cfRemoveMenu.Add_SubmenuOpened({
     $cfRemoveMenu.Items.Clear()

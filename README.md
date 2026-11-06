@@ -69,7 +69,7 @@ With more than one account the widget shows which one every row belongs to. With
 `gh` can be signed in to several GitHub accounts at once (for example a work and a private one). The widget reads each repository with the login it belongs to, without ever switching the active account: for that one call it takes the account's token from `gh auth token --user <login>` and hands it to that one `gh` process. The token is not stored by the widget.
 
 1. Right-click, **GitHub accounts**, **Sign in another account…**. A window opens where `gh auth login` runs in your browser (scopes `repo`, `workflow`, `read:org` and `user`). When it is done, close the window and choose **Refresh accounts**. The widget also asks `gh` who is logged in every five minutes.
-2. **Name an account** gives each login a name such as `Work` or `Private`; that is what the labels show (the login is the name until you change it).
+2. **Rename account** gives each login a name such as `Work` or `Private`; that is what the labels show (the login is the name until you change it).
 3. **Add repository…** asks which account reads the repository. Repositories that were already watched belong to the account that was active when you updated.
 4. The **Usage** tab has one entry per GitHub account (the billing of that user), next to the Cloudflare accounts. If GitHub refuses the billing call, the message names the command for that login: `gh auth refresh -h github.com -u <login> -s user`.
 5. If a repository belongs to a login that `gh` no longer knows, the widget says so instead of reading with another account.
@@ -82,7 +82,7 @@ The widget can read any number of Cloudflare accounts at the same time, each wit
 
 1. In each Cloudflare account, create a token at <https://dash.cloudflare.com/profile/api-tokens> (Create Token, Custom token) with **Read** access to **Workers Scripts**, **Workers Builds Configuration**, **Account Analytics** and **Account Settings**, limited to that account.
 2. Right-click the widget, **Cloudflare accounts**, **Add account…**. Type a name (for example `Work` or `Private`) and paste the token. The widget checks it by listing the accounts the token can see; a token that sees several accounts adds all of them.
-3. **Remove account** in the same submenu removes one again.
+3. **Rename account** in the same submenu changes the name later (labels, filter chips and the Usage tab follow). **Remove account** removes one again.
 
 What it shows:
 
