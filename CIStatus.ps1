@@ -402,6 +402,7 @@ function Format-Dur($ts) {
       <TextBlock Name="note" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
       </StackPanel>
       <StackPanel Name="e2ePanel" Visibility="Collapsed">
+        <WrapPanel Name="e2eRepos" Margin="0,0,0,8" Visibility="Collapsed"/>
         <TextBlock Name="e2eHelp" Foreground="#999999" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
         <Border CornerRadius="6" Background="#2A2A2A" Padding="10,7" Margin="0,0,0,6" Cursor="Hand" Tag="cmd:e2e:relevante">
           <StackPanel><TextBlock Name="e2eRel" Foreground="#EEEEEE" FontSize="13" FontWeight="SemiBold"/><TextBlock Name="e2eRelSub" Foreground="#999999" FontSize="12" TextWrapping="Wrap"/></StackPanel>
@@ -434,7 +435,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabBar', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabBar', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eRepos', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -1074,6 +1075,7 @@ function Render {
     $cfLink = if ($cfg.tab -eq 'usage') { Get-CfUsageAcct } else { $null }
     if ($cfLink) { $el.usageLink.Text = T 'linkUsageCf'; $el.usageLink.Tag = "https://dash.cloudflare.com/$($cfLink.id)/workers-and-pages" }
     else { $el.usageLink.Text = T 'linkUsage'; $el.usageLink.Tag = 'https://github.com/settings/billing/summary' }
+    Render-E2ERepos
     foreach ($k in 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub') { $el[$k].Text = T $k }
     # The last e2e message stays on the E2E tab for a while
     if ($script:e2eNoteText -and (Get-Date) -lt $script:e2eNoteUntil) { $el.e2eNote.Text = $script:e2eNoteText; $el.e2eNote.Foreground = Br $script:e2eNoteColor; $el.e2eNote.Visibility = 'Visible' } else { $el.e2eNote.Visibility = 'Collapsed' }
@@ -1273,20 +1275,47 @@ function Set-E2ENote($text, $color) {
     Render
 }
 # $tests: 'relevante', 'alle' or parts of test names (scripts/e2e-relevant.mjs in the repo decides what runs)
+# The E2E tests run in one watched repository at a time, and the repository is read with the GitHub account it belongs to.
+function Get-E2ERepo {
+    $r = [string]$cfg.e2eRepo
+    if ($r -and (Get-Repos) -contains $r) { return $r }
+    [string]@(Get-Repos)[0]
+}
+function Render-E2ERepos {
+    $repos = @(Get-Repos)
+    $el.e2eRepos.Children.Clear()
+    if ($repos.Count -lt 2) { $el.e2eRepos.Visibility = 'Collapsed'; return }
+    $el.e2eRepos.Visibility = 'Visible'
+    $cur = Get-E2ERepo
+    foreach ($rp in $repos) {
+        $key = 'gh:' + (Get-RepoLogin $rp); $c = Get-AcctColor $key; $on = ($rp -eq $cur)
+        $bd = New-Object Windows.Controls.Border; $bd.CornerRadius = 4; $bd.Padding = '7,2,7,2'; $bd.Margin = '0,0,6,4'; $bd.Cursor = 'Hand'; $bd.Tag = "cmd:e2erepo:$rp"
+        $bd.Background = Br $(if ($on) { $c[0] } else { '#2A2A2A' })
+        $sp = New-Object Windows.Controls.StackPanel; $sp.Orientation = 'Horizontal'
+        if (Test-Multi) {
+            $tg = New-Object Windows.Controls.TextBlock; $tg.FontSize = 11; $tg.Margin = '0,1,6,0'; $tg.Text = Short (Get-AcctLabel $key) 10; $tg.Foreground = Br $(if ($on) { $c[1] } else { '#777777' }); $tg.Tag = $bd.Tag
+            [void]$sp.Children.Add($tg)
+        }
+        $tb = New-Object Windows.Controls.TextBlock; $tb.FontSize = 12; $tb.Text = ($rp -split '/')[-1]; $tb.Foreground = Br $(if ($on) { $c[1] } else { '#999999' })
+        if ($on) { $tb.FontWeight = 'SemiBold' }
+        [void]$sp.Children.Add($tb); $bd.Child = $sp
+        [void]$el.e2eRepos.Children.Add($bd)
+    }
+}
 function Start-E2E($tests) {
     $tests = ([string]$tests -replace '[^A-Za-z0-9 ._-]', '').Trim()
     if (-not $tests) { $tests = 'relevante' }
-    $repo = if ($cfg.e2eRepo) { [string]$cfg.e2eRepo } else { [string]@(Get-Repos)[0] }
+    $repo = Get-E2ERepo
     if (-not $gh -or -not $repo) { Set-E2ENote (T 'noGh') $colors.fail; return }
     Set-E2ENote ((T 'e2eStarting') -f $tests) $colors.running
     Start-Gh "workflow run e2e.yml --repo $repo -f `"tests=$tests`"" {
         param($out, $err, $code, $ctx)
-        if ($code -eq 0) { Set-E2ENote ((T 'e2eStarted') -f $ctx.tests) $colors.ok; $script:since = 24 }
+        if ($code -eq 0) { Set-E2ENote (((T 'e2eStarted') -f $ctx.tests) + ' · ' + (([string]$ctx.repo -split '/')[-1])) $colors.ok; $script:since = 24 }
         else { $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }; Set-E2ENote ((T 'e2eFail') -f $m) $colors.fail }
-    } @{ tests = $tests } (Get-RepoLogin $repo)
+    } @{ tests = $tests; repo = $repo } (Get-RepoLogin $repo)
 }
 # "Choose tests": a list with a check box per test. The names and descriptions come from tests/e2e/oversikt.json in the repo.
-$script:e2eList = $null; $script:e2eListAt = [datetime]::MinValue
+$script:e2eListRepo = ''; $script:e2eList = $null; $script:e2eListAt = [datetime]::MinValue
 function Show-E2EPicker($list) {
     [xml]$px = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -1335,8 +1364,8 @@ function Show-E2EPicker($list) {
     }
 }
 function Open-E2EPicker {
-    if ($script:e2eList -and ((Get-Date) - $script:e2eListAt).TotalMinutes -lt 10) { Show-E2EPicker $script:e2eList; return }
-    $repo = if ($cfg.e2eRepo) { [string]$cfg.e2eRepo } else { [string]@(Get-Repos)[0] }
+    $repo = Get-E2ERepo
+    if ($script:e2eList -and $script:e2eListRepo -eq $repo -and ((Get-Date) - $script:e2eListAt).TotalMinutes -lt 10) { Show-E2EPicker $script:e2eList; return }
     if (-not $gh -or -not $repo) { Set-E2ENote (T 'noGh') $colors.fail; return }
     Set-E2ENote (T 'e2eLoadingList') $colors.running
     Start-Gh "api repos/$repo/contents/tests/e2e/oversikt.json -H `"Accept: application/vnd.github.raw`"" {
@@ -1344,13 +1373,13 @@ function Open-E2EPicker {
         $list = $null
         if ($code -eq 0) { try { $parsed = $out | ConvertFrom-Json; $list = @($parsed) } catch {} }
         if ($list -and $list.Count) {
-            $script:e2eList = $list; $script:e2eListAt = Get-Date; $script:e2eNoteText = $null; Render
+            $script:e2eList = $list; $script:e2eListRepo = $ctx.repo; $script:e2eListAt = Get-Date; $script:e2eNoteText = $null; Render
             Show-E2EPicker $list
         } else {
             $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }
             Set-E2ENote ((T 'e2eListFail') -f $m) $colors.fail
         }
-    } @{} (Get-RepoLogin $repo)
+    } @{ repo = $repo } (Get-RepoLogin $repo)
 }
 
 # ---------- menu ----------
@@ -1587,6 +1616,7 @@ $win.Add_MouseLeftButtonDown({
         elseif ($act -eq 'cmd:update') { Start-Update }
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
         elseif ($act -eq 'cmd:e2e:ask') { Open-E2EPicker }
+        elseif ($act -like 'cmd:e2erepo:*') { $cfg.e2eRepo = $act -replace '^cmd:e2erepo:', ''; Save-Config; Render }
         elseif ($act -like 'cmd:e2e:*') { Start-E2E ($act -replace '^cmd:e2e:', '') }
         elseif ($act -like 'cmd:src:*') { Set-UsageSrc ($act -replace '^cmd:src:', ''); Save-Config; if (-not (Get-UsageAt)) { Refresh-Usage }; Render }
         elseif ($act -like 'cmd:flt:*') { $script:runFilter = $act -replace '^cmd:flt:', ''; $cfg.runFilter = $script:runFilter; Save-Config; Select-Visible; Render }

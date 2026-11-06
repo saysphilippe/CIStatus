@@ -109,3 +109,7 @@ Where the token lives: encrypted with Windows DPAPI (the same Windows user on th
 Drag a tab sideways to move it; the order is kept. A click without moving still opens the tab.
 
 The account chips (the filter row on Runs and the source row on Usage) can be dragged into another order the same way. The order is shared by both rows; the colour stays with the account.
+
+## E2E per repository and account
+
+With more than one watched repository, the E2E tab has a chip per repository, marked with the GitHub account it is read with. The tests start in the chosen repository with that account's login, and the list behind **Choose tests…** is read per repository.
