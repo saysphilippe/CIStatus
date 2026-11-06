@@ -103,3 +103,7 @@ Where the token lives: encrypted with Windows DPAPI (the same Windows user on th
 - `gh` runs as a .NET process whose output is read by `ReadToEndAsync` tasks; a `DispatcherTimer` collects the results. No PowerShell runs on background threads.
 - `CISTATUS_USAGE_FIXTURE` can point to a JSON file `{ "summary": ..., "items": [...] }` (the two billing responses) for the Usage tab.
 - `CISTATUS_FIXTURE` can point to a JSON file with runs to show instead of calling `gh`, which is handy for checking the layout.
+
+## Tabs
+
+Drag a tab sideways to move it; the order is kept. A click without moving still opens the tab.

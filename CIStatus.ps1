@@ -6,7 +6,7 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
-$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github'; ghAccounts = @(); ghActive = ''; repoAcct = $null; runFilter = 'all' }
+$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github'; ghAccounts = @(); ghActive = ''; repoAcct = $null; runFilter = 'all'; tabOrder = @('runs', 'usage', 'e2e') }
 if (Test-Path $cfgPath) {
     try { (Get-Content $cfgPath -Raw | ConvertFrom-Json).psobject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } } catch {}
 }
@@ -383,10 +383,10 @@ function Format-Dur($ts) {
         <TextBlock Name="summary" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
         <TextBlock Name="title" Foreground="#D97757" FontWeight="SemiBold" FontSize="16"/>
       </DockPanel>
-      <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-        <TextBlock Name="tabRuns" FontSize="13" Cursor="Hand" Background="Transparent" Tag="cmd:tab:runs"/>
-        <TextBlock Name="tabUsage" FontSize="13" Cursor="Hand" Background="Transparent" Margin="14,0,0,0" Tag="cmd:tab:usage"/>
-        <TextBlock Name="tabE2E" FontSize="13" Cursor="Hand" Background="Transparent" Margin="14,0,0,0" Tag="cmd:tab:e2e"/>
+      <StackPanel Name="tabBar" Orientation="Horizontal" Margin="0,0,0,8">
+        <TextBlock Name="tabRuns" FontSize="13" Cursor="Hand" Background="Transparent" Margin="0,0,14,0" Tag="cmd:tab:runs"/>
+        <TextBlock Name="tabUsage" FontSize="13" Cursor="Hand" Background="Transparent" Margin="0,0,14,0" Tag="cmd:tab:usage"/>
+        <TextBlock Name="tabE2E" FontSize="13" Cursor="Hand" Background="Transparent" Margin="0,0,14,0" Tag="cmd:tab:e2e"/>
       </StackPanel>
       <StackPanel Name="runsPanel">
       <WrapPanel Name="runFilter" Margin="0,0,0,8" Visibility="Collapsed"/>
@@ -427,7 +427,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabBar', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -1561,6 +1561,11 @@ $win.Add_MouseLeftButtonDown({
         if ($src -is [Windows.FrameworkElement] -and $src.Tag -is [string] -and ($src.Tag -like 'http*' -or $src.Tag -like 'cmd:*')) { $act = $src.Tag }
         $src = if ($src -is [Windows.Media.Visual] -or $src -is [Windows.Media.Media3D.Visual3D]) { [Windows.Media.VisualTreeHelper]::GetParent($src) } else { $null }
     }
+    if ($act -like 'cmd:tab:*') {
+        $script:tabDrag = @{ key = ($act -replace '^cmd:tab:', ''); x0 = $e.GetPosition($el.tabBar).X; moved = $false }
+        [void]$win.CaptureMouse()
+        return
+    }
     $l0 = $win.Left; $t0 = $win.Top
     $script:dragging = $true
     try { $win.DragMove() } finally { $script:dragging = $false }
@@ -1601,6 +1606,39 @@ $timer.Add_Tick({
     elseif ($script:runs.Count -gt 0 -and ($script:tick % 5 -eq 0 -or ($cfg.minimized -and $busy))) { Render }
 })
 $timer.Start()
+# The tabs can be dragged into another order (the order is kept in the config)
+$tabEls = @{ runs = $el.tabRuns; usage = $el.tabUsage; e2e = $el.tabE2E }
+function Set-TabOrder {
+    $o = @($cfg.tabOrder | ForEach-Object { [string]$_ })
+    if ((@($o | Sort-Object) -join ',') -ne 'e2e,runs,usage') { $o = @('runs', 'usage', 'e2e') }
+    $el.tabBar.Children.Clear()
+    foreach ($k in $o) { [void]$el.tabBar.Children.Add($tabEls[$k]) }
+}
+function Get-TabOrder { @($el.tabBar.Children | ForEach-Object { ([string]$_.Tag) -replace '^cmd:tab:', '' }) }
+Set-TabOrder
+$script:tabDrag = $null
+$win.Add_MouseMove({
+    param($s, $e)
+    if (-not $script:tabDrag) { return }
+    $x = $e.GetPosition($el.tabBar).X
+    if ([math]::Abs($x - $script:tabDrag.x0) -gt 4) { $script:tabDrag.moved = $true }
+    if (-not $script:tabDrag.moved) { return }
+    $dragEl = $tabEls[$script:tabDrag.key]
+    foreach ($c in @($el.tabBar.Children)) {
+        $left = $c.TranslatePoint([Windows.Point]::new(0, 0), $el.tabBar).X
+        if ($x -ge $left -and $x -lt ($left + $c.ActualWidth + 14)) {
+            if ($c -ne $dragEl) { $i = $el.tabBar.Children.IndexOf($c); $el.tabBar.Children.Remove($dragEl); $el.tabBar.Children.Insert($i, $dragEl) }
+            break
+        }
+    }
+})
+$win.Add_MouseLeftButtonUp({
+    if (-not $script:tabDrag) { return }
+    $d = $script:tabDrag; $script:tabDrag = $null
+    $win.ReleaseMouseCapture()
+    if ($d.moved) { $cfg.tabOrder = @(Get-TabOrder); Save-Config } else { Show-Tab $d.key }
+})
+
 Show-Tab $(if ($cfg.tab -in 'usage', 'e2e') { $cfg.tab } else { 'runs' })
 Refresh
 if ($cfg.minimized) { Set-Minimized $true } else { Keep-OnScreen }   # a saved position can be on a monitor that is gone
