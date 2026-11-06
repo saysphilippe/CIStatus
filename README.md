@@ -5,6 +5,7 @@ A small always-on-top Windows desktop widget that shows the state of your GitHub
 - Latest runs across the repositories you watch, newest first, with a coloured dot: yellow = running (with elapsed time and `jobs done/total`), green = success, red = failed, grey = cancelled/skipped/queued.
 - Header summary: `N running`, `Failing` (the latest run of some workflow failed) or `All green`.
 - When a run that was running finishes, a line at the top announces it for a minute.
+- **Several accounts side by side, so work and private can be kept apart:** several GitHub logins (gh accounts) and several Cloudflare accounts at the same time. Every row carries a small coloured label with the source and the name you gave the account (`GH · Work`, `CF · Private`), the Runs tab has a filter row (All, then one chip per account, with a red or yellow dot where something is failing or running), the room in the list is shared between the accounts so a busy one cannot push the others out, and the header says where it is going on (`1 running · Work`, `Failing · Private`). See [Accounts](#accounts-github-and-cloudflare).
 - **Several Cloudflare accounts** (for example work and private) next to GitHub: builds from Workers Builds and the latest deployment of each Worker show up as rows on the Runs tab, marked with the account's name. The Usage tab gets a switch (GitHub, then one entry per account) with today's Workers requests, D1 rows read and written and Workers AI neurons against the Workers Free daily allowance. See [Cloudflare accounts](#cloudflare-accounts).
 - **Usage tab** (next to Runs): this month's GitHub Actions usage from the billing API (`gh api users/<you>/settings/billing/usage/summary`, needs the `user` scope on your `gh` login). It opens with a bar chart of usage per day and an **All services** list (with what is billable this month in the heading) with one row per service, also when nothing was used: Actions, Packages, Git LFS, Codespaces and AI credits (all Copilot / premium request SKUs, read from the premium request report). Each row shows the quantities and what is billable against that service's monthly budget, with a small bar and the same month marker. **Click a row and the bar chart (usage per day, in the service's own unit) and the per-repository list switch to that service.** Anything else GitHub reports ends up under Other. 
 - **E2E tab** (next to Usage): starts the manual `E2E (manuelt)` workflow in the first watched repo (`e2eRepo` in `config.json` overrides it) with `gh workflow run e2e.yml -f tests=...`. Three buttons: **Relevant tests** (the tests that belong to the files changed in the last commit), **All tests** (split into 4 parts) and **Choose tests...** (a window with a check box and a short description per test, read from `tests/e2e/oversikt.json` in the repo; ticking everything runs all of them). The run then shows up on the Runs tab like any other run. Needs `gh` logged in with permission to run workflows.
@@ -53,6 +54,28 @@ The **Cloudflare accounts** submenu adds and removes accounts (see below).
 
 By default it watches `saysphilippe/Nerdehagen`. The list, the number of runs per repository (`perRepo`, 5), the maximum number of rows (`maxRows`, 8), the budgets (`budgets`) and the selected service (`usageSel`) are stored in `%LOCALAPPDATA%\CIStatus\config.json`.
 
+## Accounts (GitHub and Cloudflare)
+
+With more than one account the widget shows which one every row belongs to. With only one account nothing changes: no labels and no filter row.
+
+- **Label on every row:** a small coloured box in front of the grey text, `GH · <name>` for GitHub and `CF · <name>` for Cloudflare. Each account keeps its own colour (in the order the accounts are listed). The same colours are used on the filter row and on the source switch of the Usage tab.
+- **Filter row (Runs tab):** *All*, then one chip per account. A red dot on a chip means the latest run of some workflow there failed, a yellow dot that something is running. Click a chip to see only that account; the choice is remembered.
+- **Room in the list:** the list holds `maxRows` rows (8). What is running comes first, then what is failing now, then the accounts get an equal share (8 rows and 4 accounts is 2 each), and the rest is filled with the newest.
+- **Header and minimized pill:** the summary counts all accounts, also the ones the filter hides, and names where: `1 running · Work`, `Failing · Private` (the first account, then `+N`). The minimized pill puts the account in front of each running line.
+- **When a run finishes** the line at the top starts with the account.
+
+### GitHub: several logins
+
+`gh` can be signed in to several GitHub accounts at once (for example a work and a private one). The widget reads each repository with the login it belongs to, without ever switching the active account: for that one call it takes the account's token from `gh auth token --user <login>` and hands it to that one `gh` process. The token is not stored by the widget.
+
+1. Right-click, **GitHub accounts**, **Sign in another account…**. A window opens where `gh auth login` runs in your browser (scopes `repo`, `workflow`, `read:org` and `user`). When it is done, close the window and choose **Refresh accounts**. The widget also asks `gh` who is logged in every five minutes.
+2. **Name an account** gives each login a name such as `Work` or `Private`; that is what the labels show (the login is the name until you change it).
+3. **Add repository…** asks which account reads the repository. Repositories that were already watched belong to the account that was active when you updated.
+4. The **Usage** tab has one entry per GitHub account (the billing of that user), next to the Cloudflare accounts. If GitHub refuses the billing call, the message names the command for that login: `gh auth refresh -h github.com -u <login> -s user`.
+5. If a repository belongs to a login that `gh` no longer knows, the widget says so instead of reading with another account.
+
+Billing is read per **user**. An organisation's billing is not read; a work account that is a member of an organisation shows the work user's own billing.
+
 ## Cloudflare accounts
 
 The widget can read any number of Cloudflare accounts at the same time, each with its own API token. Nothing is changed on Cloudflare: it only makes `GET` calls and one read-only GraphQL analytics query.
@@ -75,6 +98,7 @@ Where the token lives: encrypted with Windows DPAPI (the same Windows user on th
 ## Notes for development
 
 - `CIStatus.ps1` must be saved as UTF-8 **with** BOM (Nordic letters); `install.ps1` must stay ASCII without BOM (it runs through `iex`).
+- Several accounts can be tested without real logins: `CISTATUS_FIXTURE` rows are placed on accounts by `repo` through `repoAcct` in `config.json`, and `CISTATUS_CF_FIXTURE` rows carry `acctKey` (`cf:<id>`). In fixture mode `gh` is not asked who is logged in.
 - Test without real tokens: `CISTATUS_CF_FIXTURE=<json>` (accounts, runs, usage per account id) shows Cloudflare rows and usage without any network call, like `CISTATUS_FIXTURE` does for GitHub. `CISTATUS_CF_API=http://127.0.0.1:<port>` points the Cloudflare calls at a local stub (only a local address is accepted).
 - `gh` runs as a .NET process whose output is read by `ReadToEndAsync` tasks; a `DispatcherTimer` collects the results. No PowerShell runs on background threads.
 - `CISTATUS_USAGE_FIXTURE` can point to a JSON file `{ "summary": ..., "items": [...] }` (the two billing responses) for the Usage tab.

@@ -6,7 +6,7 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
-$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github' }
+$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github'; ghAccounts = @(); ghActive = ''; repoAcct = $null; runFilter = 'all' }
 if (Test-Path $cfgPath) {
     try { (Get-Content $cfgPath -Raw | ConvertFrom-Json).psobject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } } catch {}
 }
@@ -14,10 +14,105 @@ if (Test-Path $cfgPath) {
 $b = [ordered]@{ Actions = 10; Packages = 10; 'Git LFS' = 5; Codespaces = 5; AI = 5 }
 if ($cfg.budgets -and $cfg.budgets -isnot [System.Collections.IDictionary]) { $cfg.budgets.PSObject.Properties | ForEach-Object { $b[$_.Name] = $_.Value } }
 $cfg.budgets = $b
+# Which GitHub login (a gh account) each watched repository is read with: repo -> login
+$ra = @{}
+if ($cfg.repoAcct -and $cfg.repoAcct -isnot [System.Collections.IDictionary]) { $cfg.repoAcct.PSObject.Properties | ForEach-Object { $ra[$_.Name] = [string]$_.Value } }
+$cfg.repoAcct = $ra
 function Save-Config { $cfg | ConvertTo-Json -Depth 5 | Set-Content $cfgPath -Encoding UTF8 }
 function Get-Repos { @($cfg.repos | Where-Object { $_ }) }
 # Something to read from: the GitHub CLI or at least one Cloudflare account
 function Test-Sources { [bool]$gh -or (@(Get-CfAccounts).Count -gt 0) }
+
+# ---------- accounts: GitHub logins (several gh accounts side by side) and Cloudflare accounts ----------
+# Every row belongs to one account. GitHub: the login a repository is read with (cfg.repoAcct, default the gh account that was active when the
+# repository was added). Cloudflare: the account whose token was used. The key is 'gh:<login>' or 'cf:<id>'.
+function Get-GhAccounts { @($cfg.ghAccounts | Where-Object { $_ -and $_.login }) }
+function Get-RepoLogin($repo) {
+    $l = [string]$cfg.repoAcct[[string]$repo]
+    if ($l) { return $l }
+    if ($cfg.ghActive) { return [string]$cfg.ghActive }
+    $f = @(Get-GhAccounts)[0]; if ($f) { return [string]$f.login }
+    ''
+}
+function Get-Accounts {
+    $l = @()
+    $gha = @(Get-GhAccounts)
+    if ($gha.Count) { foreach ($a in $gha) { $l += [pscustomobject]@{ key = "gh:$($a.login)"; src = 'GH'; label = $(if ($a.label) { [string]$a.label } else { [string]$a.login }); id = [string]$a.login } } }
+    elseif ($gh) { $l += [pscustomobject]@{ key = 'gh:'; src = 'GH'; label = 'GitHub'; id = '' } }   # before gh has told who is logged in
+    foreach ($c in (Get-CfAccounts)) { $l += [pscustomobject]@{ key = "cf:$($c.id)"; src = 'CF'; label = [string]$c.label; id = [string]$c.id } }
+    $l
+}
+function Get-RowKey($r) {
+    if ($r.acctKey) { return [string]$r.acctKey }
+    if ($r.source -eq 'cloudflare') { $a = Get-Accounts | Where-Object { $_.src -eq 'CF' -and $_.label -eq [string]$r.repo } | Select-Object -First 1; if ($a) { return $a.key }; return "cf:$($r.repo)" }
+    'gh:' + (Get-RepoLogin $r.repo)
+}
+function Get-Acct($key) { Get-Accounts | Where-Object { $_.key -eq $key } | Select-Object -First 1 }
+function Get-AcctLabel($key) { $a = Get-Acct $key; if ($a) { $a.label } else { ([string]$key -replace '^(gh|cf):', '') } }
+function Test-Multi { @(Get-Accounts).Count -gt 1 }
+# One muted colour pair per account (background, text), in the order the accounts are listed, so a colour stays with its account
+$acctPalette = @( @('#2F4B6B', '#A8CBF2'), @('#4B3A6B', '#CDB9F2'), @('#2F5E5A', '#A5E3D8'), @('#6B3A4B', '#F2B9CD'), @('#5E5A2F', '#E3DDA5'), @('#3A4B5E', '#B9CCDF') )
+function Get-AcctColor($key) {
+    $i = 0; $n = 0
+    foreach ($a in (Get-Accounts)) { if ($a.key -eq $key) { $i = $n; break }; $n++ }
+    $acctPalette[$i % $acctPalette.Count]
+}
+function Short($s, $n) { $s = [string]$s; if ($s.Length -gt $n) { $s.Substring(0, $n - 1) + '…' } else { $s } }
+function New-AcctBadge($key) {
+    $a = Get-Acct $key; $c = Get-AcctColor $key
+    $b = New-Object Windows.Controls.Border
+    $b.CornerRadius = 3; $b.Padding = '5,0,5,1'; $b.Margin = '0,0,6,0'; $b.Background = Br $c[0]; $b.VerticalAlignment = 'Center'
+    $t = New-Object Windows.Controls.TextBlock; $t.FontSize = 11; $t.Foreground = Br $c[1]
+    $t.Text = if ($a) { "$($a.src) · $(Short $a.label 14)" } else { Short (Get-AcctLabel $key) 16 }
+    $b.ToolTip = if ($a) { "$($a.src) · $($a.label)" } else { $key }
+    $b.Child = $t
+    $b
+}
+
+# gh can be logged in to several GitHub accounts at once. A call for another account than the active one gets that account's token
+# (gh auth token --user <login>) in GH_TOKEN for that one process; the active account is never switched.
+$script:ghTokens = @{}
+function Get-GhToken($login) {
+    if (-not $login -or -not $gh) { return $null }
+    if ($script:ghTokens.ContainsKey($login)) { return $script:ghTokens[$login] }
+    try {
+        $psi = New-Object Diagnostics.ProcessStartInfo
+        $psi.FileName = $gh; $psi.Arguments = "auth token --hostname github.com --user $login"
+        $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
+        $p = [Diagnostics.Process]::Start($psi)
+        $o = $p.StandardOutput.ReadToEndAsync(); $e = $p.StandardError.ReadToEndAsync()
+        if (-not $p.WaitForExit(8000)) { try { $p.Kill() } catch {}; return $null }
+        $t = ([string]$o.Result).Trim()
+        if ($p.ExitCode -eq 0 -and $t) { $script:ghTokens[$login] = $t; return $t }
+    } catch {}
+    $null
+}
+$script:ghAcctCheckedAt = [datetime]::MinValue
+function Refresh-GhAccounts {
+    $script:ghAcctCheckedAt = Get-Date
+    if (-not $gh -or $env:CISTATUS_FIXTURE -or $script:cfFixture) { return }
+    Start-Gh 'auth status --json hosts' {
+        param($out, $err, $code, $ctx)
+        try { $found = @(($out | ConvertFrom-Json).hosts.'github.com' | Where-Object { $_ -and $_.login }) } catch { return }
+        if (-not $found.Count) { return }
+        $old = @{}; foreach ($a in (Get-GhAccounts)) { $old[[string]$a.login] = [string]$a.label }
+        $new = @(); $active = ''
+        foreach ($f in $found) {
+            $l = [string]$f.login
+            $new += [pscustomobject]@{ login = $l; label = $(if ($old[$l]) { $old[$l] } else { $l }) }
+            if ($f.active) { $active = $l }
+        }
+        if (-not $active) { $active = [string]$new[0].login }
+        $changed = ((@(Get-GhAccounts) | ForEach-Object { $_.login }) -join ',') -ne (($new | ForEach-Object { $_.login }) -join ',') -or $cfg.ghActive -ne $active
+        # Repositories added before there were several accounts belong to the account that was active
+        foreach ($rp in (Get-Repos)) { if (-not $cfg.repoAcct[$rp]) { $cfg.repoAcct[$rp] = $active; $changed = $true } }
+        if ($changed) {
+            $cfg.ghAccounts = $new; $cfg.ghActive = $active
+            if ($script:usageSrc -like 'gh:*' -and -not (Get-GhAccounts | Where-Object { "gh:$($_.login)" -eq $script:usageSrc })) { Set-UsageSrc "gh:$active" }
+            Save-Config; Render; Refresh
+        }
+    } @{}
+}
 
 $strings = @{
     en = @{
@@ -46,6 +141,10 @@ $strings = @{
         e2ePick = 'Tick the tests to run'; e2eSelAll = 'Select all'; e2eSelNone = 'Select none'; e2eRunN = 'Run {0} tests'; e2eCancel = 'Cancel'; e2eLoadingList = 'Reading the test list…'; e2eListFail = 'Could not read the test list: {0}'
         e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
+        ghNoLogin = 'gh is not signed in as {0}. Choose GitHub accounts, Sign in another account.'
+        mGh = 'GitHub accounts'; mGhAdd = 'Sign in another account…'; mGhRefresh = 'Refresh accounts'; mGhName = 'Name an account'
+        ghAskLabel = 'Name for the GitHub account {0} (for example Work or Private):'; ghAcctLbl = 'Read with GitHub account:'; fltAll = 'All'
+        ghSignIn = 'Sign in to the other GitHub account in the browser. Close this window when you are done, and choose Refresh accounts in CI Status.'
         mCf = 'Cloudflare accounts'; mCfAdd = 'Add account…'; mCfRemove = 'Remove account'
         cfAskLabel = 'Name for this Cloudflare account (for example Work or Private):'; cfAskToken = 'API token (read only):'; cfAdd = 'Add'; cfCancel = 'Cancel'
         cfTokenHelp = 'Create the token at dash.cloudflare.com/profile/api-tokens with Read access to: Workers Scripts, Workers Builds Configuration, Account Analytics and Account Settings. It is stored encrypted for your Windows user only.'
@@ -83,6 +182,10 @@ $strings = @{
         e2ePick = 'Kryss av testene som skal kjøres'; e2eSelAll = 'Velg alle'; e2eSelNone = 'Fjern alle'; e2eRunN = 'Kjør {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Leser testlisten…'; e2eListFail = 'Kunne ikke lese testlisten: {0}'
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
+        ghNoLogin = 'gh er ikke innlogget som {0}. Velg GitHub-kontoer, Logg inn en annen konto.'
+        mGh = 'GitHub-kontoer'; mGhAdd = 'Logg inn en annen konto…'; mGhRefresh = 'Oppdater kontoer'; mGhName = 'Gi en konto navn'
+        ghAskLabel = 'Navn på GitHub-kontoen {0} (for eksempel Jobb eller Privat):'; ghAcctLbl = 'Les med GitHub-konto:'; fltAll = 'Alle'
+        ghSignIn = 'Logg inn på den andre GitHub-kontoen i nettleseren. Lukk vinduet når du er ferdig, og velg Oppdater kontoer i CI Status.'
         mCf = 'Cloudflare-kontoer'; mCfAdd = 'Legg til konto…'; mCfRemove = 'Fjern konto'
         cfAskLabel = 'Navn på denne Cloudflare-kontoen (for eksempel Jobb eller Privat):'; cfAskToken = 'API-token (bare lesing):'; cfAdd = 'Legg til'; cfCancel = 'Avbryt'
         cfTokenHelp = 'Lag tokenet på dash.cloudflare.com/profile/api-tokens med lesetilgang (Read) til: Workers Scripts, Workers Builds Configuration, Account Analytics og Account Settings. Det lagres kryptert, bare for din Windows-bruker.'
@@ -120,6 +223,10 @@ $strings = @{
         e2ePick = 'Kryssa i testerna som ska köras'; e2eSelAll = 'Markera alla'; e2eSelNone = 'Avmarkera alla'; e2eRunN = 'Kör {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Läser testlistan…'; e2eListFail = 'Kunde inte läsa testlistan: {0}'
         e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
+        ghNoLogin = 'gh är inte inloggad som {0}. Välj GitHub-konton, Logga in ett annat konto.'
+        mGh = 'GitHub-konton'; mGhAdd = 'Logga in ett annat konto…'; mGhRefresh = 'Uppdatera konton'; mGhName = 'Namnge ett konto'
+        ghAskLabel = 'Namn på GitHub-kontot {0} (till exempel Jobb eller Privat):'; ghAcctLbl = 'Läs med GitHub-konto:'; fltAll = 'Alla'
+        ghSignIn = 'Logga in på det andra GitHub-kontot i webbläsaren. Stäng fönstret när du är klar och välj Uppdatera konton i CI Status.'
         mCf = 'Cloudflare-konton'; mCfAdd = 'Lägg till konto…'; mCfRemove = 'Ta bort konto'
         cfAskLabel = 'Namn på det här Cloudflare-kontot (till exempel Jobb eller Privat):'; cfAskToken = 'API-token (endast läsning):'; cfAdd = 'Lägg till'; cfCancel = 'Avbryt'
         cfTokenHelp = 'Skapa token på dash.cloudflare.com/profile/api-tokens med läsbehörighet (Read) till: Workers Scripts, Workers Builds Configuration, Account Analytics och Account Settings. Den lagras krypterad, bara för din Windows-användare.'
@@ -157,6 +264,10 @@ $strings = @{
         e2ePick = 'Afkryds de tests der skal køre'; e2eSelAll = 'Vælg alle'; e2eSelNone = 'Fravælg alle'; e2eRunN = 'Kør {0} tests'; e2eCancel = 'Annuller'; e2eLoadingList = 'Læser testlisten…'; e2eListFail = 'Kunne ikke læse testlisten: {0}'
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
+        ghNoLogin = 'gh er ikke logget ind som {0}. Vælg GitHub-konti, Log ind på en anden konto.'
+        mGh = 'GitHub-konti'; mGhAdd = 'Log ind på en anden konto…'; mGhRefresh = 'Opdater konti'; mGhName = 'Navngiv en konto'
+        ghAskLabel = 'Navn på GitHub-kontoen {0} (for eksempel Job eller Privat):'; ghAcctLbl = 'Læs med GitHub-konto:'; fltAll = 'Alle'
+        ghSignIn = 'Log ind på den anden GitHub-konto i browseren. Luk vinduet, når du er færdig, og vælg Opdater konti i CI Status.'
         mCf = 'Cloudflare-konti'; mCfAdd = 'Tilføj konto…'; mCfRemove = 'Fjern konto'
         cfAskLabel = 'Navn på denne Cloudflare-konto (for eksempel Job eller Privat):'; cfAskToken = 'API-token (kun læsning):'; cfAdd = 'Tilføj'; cfCancel = 'Annuller'
         cfTokenHelp = 'Opret tokenet på dash.cloudflare.com/profile/api-tokens med læseadgang (Read) til: Workers Scripts, Workers Builds Configuration, Account Analytics og Account Settings. Det gemmes krypteret, kun for din Windows-bruger.'
@@ -182,10 +293,21 @@ if (-not (Test-Path $gh)) { $c = Get-Command gh.exe -ErrorAction SilentlyContinu
 
 # Processes run as .NET tasks (no PowerShell on background threads); a DispatcherTimer picks up the results.
 $script:jobs = New-Object System.Collections.ArrayList
-function Start-Gh($arguments, $onDone, $ctx) {
+function Start-Gh($arguments, $onDone, $ctx, $login = $null) {
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = $gh; $psi.Arguments = $arguments
     $psi.UseShellExecute = $false; $psi.CreateNoWindow = $true
+    if ($login) {
+        $tok = Get-GhToken $login
+        if ($tok) { $psi.EnvironmentVariables['GH_TOKEN'] = $tok }
+        else {
+            # gh does not know this login (signed out?): fail, rather than read with whatever account happens to be active
+            $o = New-Object 'Threading.Tasks.TaskCompletionSource[string]'; $o.SetResult('')
+            $e = New-Object 'Threading.Tasks.TaskCompletionSource[string]'; $e.SetResult([string]((T 'ghNoLogin') -f $login))
+            [void]$script:jobs.Add(@{ proc = $null; fake = $true; out = $o.Task; err = $e.Task; done = $onDone; ctx = $ctx; started = Get-Date })
+            return
+        }
+    }
     $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true
     $psi.StandardOutputEncoding = [Text.Encoding]::UTF8; $psi.StandardErrorEncoding = [Text.Encoding]::UTF8
     $p = [Diagnostics.Process]::Start($psi)
@@ -194,15 +316,15 @@ function Start-Gh($arguments, $onDone, $ctx) {
 function Receive-Jobs {
     for ($i = $script:jobs.Count - 1; $i -ge 0; $i--) {
         $j = $script:jobs[$i]
-        $finished = $j.out.IsCompleted -and $j.err.IsCompleted -and $j.proc.HasExited
+        $finished = $j.out.IsCompleted -and $j.err.IsCompleted -and ($j.fake -or $j.proc.HasExited)
         $timedOut = ((Get-Date) - $j.started).TotalSeconds -gt 40
         if (-not ($finished -or $timedOut)) { continue }
         $script:jobs.RemoveAt($i)
         if ($timedOut -and -not $finished) {
-            try { $j.proc.Kill() } catch {}
+            try { if ($j.proc) { $j.proc.Kill() } } catch {}
             & $j.done '' 'timeout' 1 $j.ctx
         } else {
-            & $j.done $j.out.Result $j.err.Result $j.proc.ExitCode $j.ctx
+            & $j.done $j.out.Result $j.err.Result $(if ($j.fake) { 1 } else { $j.proc.ExitCode }) $j.ctx
         }
     }
 }
@@ -267,6 +389,7 @@ function Format-Dur($ts) {
         <TextBlock Name="tabE2E" FontSize="13" Cursor="Hand" Background="Transparent" Margin="14,0,0,0" Tag="cmd:tab:e2e"/>
       </StackPanel>
       <StackPanel Name="runsPanel">
+      <WrapPanel Name="runFilter" Margin="0,0,0,8" Visibility="Collapsed"/>
       <TextBlock Name="flash" Foreground="#EEE" FontSize="12" Margin="0,0,0,6" TextWrapping="Wrap" Visibility="Collapsed"/>
       <StackPanel Name="rows"/>
       <TextBlock Name="note" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
@@ -304,7 +427,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -435,7 +558,7 @@ function Receive-CfBuilds($body, $status, $err, $ctx) {
                 $st.builds += [pscustomobject]@{
                     databaseId = "cf-$($b.build_uuid)"; status = $status2; conclusion = $concl; displayTitle = $(if ($msg) { $msg } else { [string]$s.id })
                     workflowName = [string]$s.id; createdAt = [string]$b.created_on; updatedAt = $(if ($b.stopped_on) { [string]$b.stopped_on } else { [string]$b.modified_on })
-                    url = "https://dash.cloudflare.com/$($a.id)/workers/services/view/$($s.id)/production/builds"; repo = [string]$a.label; source = 'cloudflare'; kind = 'build'; via = ''
+                    url = "https://dash.cloudflare.com/$($a.id)/workers/services/view/$($s.id)/production/builds"; repo = [string]$a.label; acctKey = "cf:$($a.id)"; source = 'cloudflare'; kind = 'build'; via = ''
                 }
             }
         } catch { $st.err = 'JSON' }
@@ -452,7 +575,7 @@ function Receive-CfBuilds($body, $status, $err, $ctx) {
         $deploys += [pscustomobject]@{
             databaseId = "cf-dep-$($a.id)-$($s.id)"; status = 'completed'; conclusion = 'success'; displayTitle = [string]$s.id; workflowName = ''
             createdAt = [string]$s.modified_on; updatedAt = [string]$s.modified_on; url = "https://dash.cloudflare.com/$($a.id)/workers/services/view/$($s.id)/production"
-            repo = [string]$a.label; source = 'cloudflare'; kind = 'deploy'; via = [string]$s.last_deployed_from
+            repo = [string]$a.label; acctKey = "cf:$($a.id)"; source = 'cloudflare'; kind = 'deploy'; via = [string]$s.last_deployed_from
         }
     }
     $rows += $deploys
@@ -470,22 +593,67 @@ function Refresh-Cf {
     foreach ($a in $accts) { Start-Cf $a 'GET' "/accounts/$($a.id)/workers/scripts" $null ${function:Receive-CfScripts} @{ acct = $a } }
 }
 
-# GitHub runs and Cloudflare builds in one list, newest first. A run that was running and has now finished is announced at the top for a minute.
+# All the runs that were read (GitHub and Cloudflare) are kept in $script:cand. What the list shows is chosen from them by Select-Visible:
+# the chosen account (filter), then the room is shared between the accounts so a busy one cannot push the others out.
+$script:cand = @()
+$script:runFilter = [string]$cfg.runFilter; if (-not $script:runFilter) { $script:runFilter = 'all' }
+$script:sum = @{ running = 0; runKeys = @(); failKeys = @(); any = $false }
+$script:failIds = @{}
 function Merge-Runs {
-    $all = @(@($script:ghRuns) + @($script:cfRuns) | Where-Object { $_ } | Sort-Object { ToUtc $_.createdAt } -Descending | Select-Object -First ([int]$cfg.maxRows))
-    foreach ($r in $all) {
+    $script:cand = @(@($script:ghRuns) + @($script:cfRuns) | Where-Object { $_ })
+    $multi = Test-Multi
+    # A run that was running and has now finished is announced at the top for a minute
+    foreach ($r in $script:cand) {
         $id = [string]$r.databaseId; $st = Get-State $r
         if ($script:prevState.ContainsKey($id) -and $script:prevState[$id] -in 'running', 'queued' -and $st -notin 'running', 'queued') {
-            $el.flash.Text = (T 'finished') -f $r.displayTitle, (T $stateKey[$st])
+            $who = $(if ($multi) { (Short (Get-AcctLabel (Get-RowKey $r)) 14) + ' · ' } else { '' })
+            $el.flash.Text = (T 'finished') -f ($who + $r.displayTitle), (T $stateKey[$st])
             $el.flash.Foreground = Br $colors[$st]; $script:flashColor = $colors[$st]
             $script:flashUntil = (Get-Date).AddSeconds(60)
         }
         $script:prevState[$id] = $st
     }
-    $script:runs = $all
+    # The header says what is going on in all accounts, also the ones the filter hides: something running, or a workflow whose latest run failed
+    $live = @($script:cand | Where-Object { (Get-State $_) -in 'running', 'queued' })
+    $script:failIds = @{}
+    $seen = @{}
+    foreach ($r in ($script:cand | Where-Object { $_.status -eq 'completed' } | Sort-Object { ToUtc $_.createdAt } -Descending)) {
+        $k = (Get-RowKey $r) + '|' + $r.repo + '|' + $r.workflowName
+        if (-not $seen.ContainsKey($k)) { $seen[$k] = $true; if ((Get-State $r) -eq 'fail') { $script:failIds[[string]$r.databaseId] = $true } }
+    }
+    $failRows = @($script:cand | Where-Object { $script:failIds.ContainsKey([string]$_.databaseId) })
+    $script:sum = @{ running = $live.Count; runKeys = @($live | ForEach-Object { Get-RowKey $_ } | Select-Object -Unique); failKeys = @($failRows | ForEach-Object { Get-RowKey $_ } | Select-Object -Unique); any = ($script:cand.Count -gt 0) }
     $script:updatedAt = Get-Date
+    Select-Visible
     Render
     if ($win.IsLoaded) { Keep-OnScreen }
+}
+function Select-Visible {
+    $max = [int]$cfg.maxRows
+    $all = @($script:cand)
+    $flt = $script:runFilter
+    if ($flt -ne 'all' -and -not (Get-Acct $flt)) { $flt = 'all' }
+    if ($flt -ne 'all') { $all = @($all | Where-Object { (Get-RowKey $_) -eq $flt }) }
+    $sorted = @($all | Sort-Object { ToUtc $_.createdAt } -Descending)
+    $script:pickList = New-Object System.Collections.ArrayList; $script:pickSeen = @{}
+    # 1. what is running, 2. what is failing now, 3. an equal share per account, 4. the newest of the rest
+    foreach ($r in $sorted) { if ((Get-State $r) -in 'running', 'queued') { [void](Add-Pick $r $max) } }
+    foreach ($r in $sorted) { if ($script:failIds.ContainsKey([string]$r.databaseId)) { [void](Add-Pick $r $max) } }
+    $keys = @($sorted | ForEach-Object { Get-RowKey $_ } | Select-Object -Unique)
+    if ($keys.Count -gt 1) {
+        $quota = [math]::Max(1, [int][math]::Floor($max / $keys.Count))
+        foreach ($k in $keys) {
+            $n = @($script:pickList | Where-Object { (Get-RowKey $_) -eq $k }).Count
+            foreach ($r in ($sorted | Where-Object { (Get-RowKey $_) -eq $k })) { if ($n -ge $quota) { break }; if (Add-Pick $r $max) { $n++ } }
+        }
+    }
+    foreach ($r in $sorted) { [void](Add-Pick $r $max) }
+    $script:runs = @($script:pickList | Sort-Object { ToUtc $_.createdAt } -Descending)
+}
+function Add-Pick($r, $max) {
+    $id = [string]$r.databaseId
+    if ($script:pickSeen.ContainsKey($id) -or $script:pickList.Count -ge $max) { return $false }
+    $script:pickSeen[$id] = $true; [void]$script:pickList.Add($r); $true
 }
 
 # Daily usage per account from the GraphQL analytics API. The reference is the Workers Free daily allowance (resets 00:00 UTC);
@@ -495,11 +663,29 @@ $cfLimits = @(
     @{ k = 'd1w'; label = 'cfD1W'; limit = 100000.0 }, @{ k = 'ai'; label = 'cfAi'; limit = 10000.0 }
 )
 $script:cfUsage = @{}        # account id -> @{ data; at; err; pending }
-$script:usageSrc = $(if ($cfg.usageSrc) { [string]$cfg.usageSrc } else { 'github' })
-function Get-CfUsageAcct {
-    if ($script:usageSrc -eq 'github') { return $null }
-    Get-CfAccounts | Where-Object { [string]$_.id -eq $script:usageSrc } | Select-Object -First 1
+function New-Usage($login) { @{ summary = $null; items = $null; premium = @(); at = $null; err = $null; pending = 0; user = $login; login = $login } }
+$script:usageBy = @{}
+function Select-GhUsage($login) {
+    if (-not $script:usageBy.ContainsKey([string]$login)) { $script:usageBy[[string]$login] = New-Usage ([string]$login) }
+    $script:usage = $script:usageBy[[string]$login]
 }
+$script:usage = New-Usage ''
+$script:usageBy[''] = $script:usage
+# The source of the Usage tab: 'gh:<login>' or 'cf:<account id>'. Older config files have 'github' or a bare Cloudflare account id.
+$script:usageSrc = [string]$cfg.usageSrc
+function Get-CfUsageAcct {
+    if ($script:usageSrc -notlike 'cf:*') { return $null }
+    $id = $script:usageSrc.Substring(3)
+    Get-CfAccounts | Where-Object { [string]$_.id -eq $id } | Select-Object -First 1
+}
+function Set-UsageSrc($key) {
+    $script:usageSrc = $key; $cfg.usageSrc = $key
+    if ($key -like 'gh:*') { Select-GhUsage $key.Substring(3) }
+}
+if ($script:usageSrc -notlike 'gh:*' -and $script:usageSrc -notlike 'cf:*') { $script:usageSrc = $(if ($script:usageSrc -and $script:usageSrc -ne 'github') { "cf:$($script:usageSrc)" } else { 'gh:' }) }
+if ($script:usageSrc -eq 'gh:') { $script:usageSrc = 'gh:' + (Get-RepoLogin '') }
+if ($script:usageSrc -like 'cf:*' -and -not (Get-CfUsageAcct)) { $script:usageSrc = 'gh:' + (Get-RepoLogin '') }
+if ($script:usageSrc -like 'gh:*') { Select-GhUsage $script:usageSrc.Substring(3) }
 function Get-UsageAt {
     $a = Get-CfUsageAcct
     if ($a) { $u = $script:cfUsage[[string]$a.id]; if ($u) { return $u.at } else { return $null } }
@@ -545,36 +731,36 @@ function Refresh-CfUsage {
 }
 
 # ---------- usage (GitHub billing) ----------
-$script:usage = @{ summary = $null; items = $null; premium = @(); at = $null; err = $null; pending = 0; user = $null }
 $cultures = @{ en = 'en-US'; no = 'nb-NO'; sv = 'sv-SE'; da = 'da-DK' }
 function Get-Culture2 { try { [Globalization.CultureInfo]::GetCultureInfo($cultures[[string]$cfg.language]) } catch { $inv } }
 function Format-Money($v) { '$' + ([double]$v).ToString('N2', $inv) }
 function Format-Num($v) { ([double]$v).ToString('N0', (Get-Culture2)) }
 
 function Receive-Usage($out, $err, $code, $ctx) {
+    $u = $ctx.u
     if ($code -ne 0 -and $ctx.kind -eq 'premium') {
         # The AI credits report is optional (not every account has it); a failure there is not an error for the tab
-        $script:usage.premium = @()
+        $u.premium = @()
     } elseif ($code -ne 0) {
         $m = ([string]$err).Trim()
-        $script:usage.err = $(if ($m -match '403|404|scope|Resource not accessible') { T 'uScope' } else { (T 'uErr') -f $(if ($m.Length -gt 100) { $m.Substring(0, 100) } else { $m }) })
+        $u.err = $(if ($m -match '403|404|scope|Resource not accessible') { (T 'uScope') -replace 'gh auth refresh -s user', $(if ($u.login) { "gh auth refresh -h github.com -u $($u.login) -s user" } else { 'gh auth refresh -s user' }) } else { (T 'uErr') -f $(if ($m.Length -gt 100) { $m.Substring(0, 100) } else { $m }) })
     } else {
         try {
             $parsed = $out | ConvertFrom-Json
-            if ($ctx.kind -eq 'summary') { $script:usage.summary = $parsed } elseif ($ctx.kind -eq 'premium') { $script:usage.premium = @($parsed.usageItems) } else { $script:usage.items = @($parsed.usageItems) }
-            $script:usage.err = $null
-        } catch { $script:usage.err = (T 'uErr') -f 'JSON' }
+            if ($ctx.kind -eq 'summary') { $u.summary = $parsed } elseif ($ctx.kind -eq 'premium') { $u.premium = @($parsed.usageItems) } else { $u.items = @($parsed.usageItems) }
+            $u.err = $null
+        } catch { $u.err = (T 'uErr') -f 'JSON' }
     }
-    $script:usage.pending--
-    if ($script:usage.pending -le 0) { $script:usage.at = Get-Date; $script:usage.pending = 0; Render; if ($win.IsLoaded) { Keep-OnScreen } }
+    $u.pending--
+    if ($u.pending -le 0) { $u.at = Get-Date; $u.pending = 0; Render; if ($win.IsLoaded) { Keep-OnScreen } }
 }
 function Start-UsageFetch {
     $now = (Get-Date).ToUniversalTime()
-    $u = $script:usage.user
-    $script:usage.pending = 3
-    Start-Gh "api users/$u/settings/billing/premium_request/usage" ${function:Receive-Usage} @{ kind = 'premium' }
-    Start-Gh "api users/$u/settings/billing/usage/summary" ${function:Receive-Usage} @{ kind = 'summary' }
-    Start-Gh "api `"users/$u/settings/billing/usage?year=$($now.Year)&month=$($now.Month)`"" ${function:Receive-Usage} @{ kind = 'items' }
+    $uo = $script:usage; $u = $uo.user; $lg = $uo.login
+    $uo.pending = 3
+    Start-Gh "api users/$u/settings/billing/premium_request/usage" ${function:Receive-Usage} @{ kind = 'premium'; u = $uo } $lg
+    Start-Gh "api users/$u/settings/billing/usage/summary" ${function:Receive-Usage} @{ kind = 'summary'; u = $uo } $lg
+    Start-Gh "api `"users/$u/settings/billing/usage?year=$($now.Year)&month=$($now.Month)`"" ${function:Receive-Usage} @{ kind = 'items'; u = $uo } $lg
 }
 function Refresh-Usage {
     if (Get-CfUsageAcct) { Refresh-CfUsage; return }
@@ -585,18 +771,19 @@ function Refresh-Usage {
         $script:usage.summary = $f.summary; $script:usage.items = @($f.items); $script:usage.premium = @($f.premium); $script:usage.at = Get-Date; $script:usage.err = $null; Render; return
     }
     if (-not $gh) { Render; return }
-    $script:usage.pending = 1; Render
-    if ($script:usage.user) { $script:usage.pending = 0; Start-UsageFetch; Render; return }
-    # The login comes first, then the two billing calls
+    $uo = $script:usage
+    $uo.pending = 1; Render
+    if ($uo.user) { $uo.pending = 0; Start-UsageFetch; Render; return }
+    # The login comes first (only when gh has not said who is logged in), then the billing calls
     Start-Gh 'api user --jq .login' {
         param($out, $err, $code, $ctx)
-        $script:usage.pending = 0
+        $uo = $ctx.u; $uo.pending = 0
         $login = ([string]$out).Trim()
-        if ($code -ne 0 -or -not $login) { $script:usage.err = (T 'uErr') -f ([string]$err).Trim(); Render; return }
-        $script:usage.user = $login
-        Start-UsageFetch
+        if ($code -ne 0 -or -not $login) { $uo.err = (T 'uErr') -f ([string]$err).Trim(); Render; return }
+        $uo.user = $login
+        if ($script:usage -eq $uo) { Start-UsageFetch }
         Render
-    } @{}
+    } @{ u = $uo }
 }
 
 $script:usageSel = [string]$cfg.usageSel
@@ -622,18 +809,19 @@ function Get-Budget($key) {
 
 # The source switch at the top of the Usage tab: GitHub, then one entry per Cloudflare account (only when there is an account)
 function Render-UsageSrc {
-    $accts = @(Get-CfAccounts)
+    $accts = @(Get-Accounts)
     $el.uSrc.Children.Clear()
-    if (-not $accts.Count) { $el.uSrc.Visibility = 'Collapsed'; return }
+    if ($accts.Count -lt 2) { $el.uSrc.Visibility = 'Collapsed'; return }
     $el.uSrc.Visibility = 'Visible'
-    $cur = Get-CfUsageAcct
-    $items = @(@{ id = 'github'; label = 'GitHub' })
-    foreach ($a in $accts) { $items += @{ id = [string]$a.id; label = [string]$a.label } }
-    foreach ($it in $items) {
-        $tb = New-Object Windows.Controls.TextBlock; $tb.Text = $it.label; $tb.FontSize = 13; $tb.Cursor = 'Hand'; $tb.Background = Br '#00000000'; $tb.Margin = '0,0,14,0'; $tb.Tag = "cmd:src:$($it.id)"
-        $on = if ($cur) { [string]$cur.id -eq $it.id } else { $it.id -eq 'github' }
-        $tb.Foreground = Br $(if ($on) { '#D97757' } else { '#999999' }); if ($on) { $tb.FontWeight = 'SemiBold' }
-        [void]$el.uSrc.Children.Add($tb)
+    foreach ($a in $accts) {
+        $c = Get-AcctColor $a.key
+        $on = ($a.key -eq $script:usageSrc)
+        $bd = New-Object Windows.Controls.Border; $bd.CornerRadius = 4; $bd.Padding = '7,2,7,2'; $bd.Margin = '0,0,6,4'; $bd.Cursor = 'Hand'; $bd.Tag = "cmd:src:$($a.key)"
+        $bd.Background = Br $(if ($on) { $c[0] } else { '#2A2A2A' })
+        $tb = New-Object Windows.Controls.TextBlock; $tb.FontSize = 12; $tb.Text = "$($a.src) · $(Short $a.label 14)"; $tb.Foreground = Br $(if ($on) { $c[1] } else { '#999999' })
+        if ($on) { $tb.FontWeight = 'SemiBold' }
+        $bd.Child = $tb
+        [void]$el.uSrc.Children.Add($bd)
     }
 }
 function Render-CfUsage($a) {
@@ -848,6 +1036,31 @@ function Show-Tab($t) {
     if ($win.IsLoaded) { Keep-OnScreen }
 }
 
+# The filter row on the Runs tab: All, then one chip per account with a dot for what is happening there (red = failing, yellow = running)
+function Render-RunFilter {
+    $accts = @(Get-Accounts)
+    $el.runFilter.Children.Clear()
+    if ($accts.Count -lt 2) { $el.runFilter.Visibility = 'Collapsed'; return }
+    $el.runFilter.Visibility = 'Visible'
+    $cur = $script:runFilter; if ($cur -ne 'all' -and -not (Get-Acct $cur)) { $cur = 'all' }
+    $items = @([pscustomobject]@{ key = 'all'; text = T 'fltAll'; c = @('#3A3A3A', '#EEEEEE') })
+    foreach ($a in $accts) { $items += [pscustomobject]@{ key = $a.key; text = "$($a.src) · $(Short $a.label 14)"; c = (Get-AcctColor $a.key) } }
+    foreach ($it in $items) {
+        $on = ($it.key -eq $cur)
+        $bd = New-Object Windows.Controls.Border; $bd.CornerRadius = 4; $bd.Padding = '7,2,7,2'; $bd.Margin = '0,0,6,4'; $bd.Cursor = 'Hand'; $bd.Tag = "cmd:flt:$($it.key)"
+        $bd.Background = Br $(if ($on) { $it.c[0] } else { '#2A2A2A' })
+        $sp = New-Object Windows.Controls.StackPanel; $sp.Orientation = 'Horizontal'
+        if ($it.key -ne 'all') {
+            $dotColor = if (@($script:sum.failKeys) -contains $it.key) { $colors.fail } elseif (@($script:sum.runKeys) -contains $it.key) { $colors.running } else { $null }
+            if ($dotColor) { $d = New-Object Windows.Shapes.Ellipse; $d.Width = 7; $d.Height = 7; $d.Margin = '0,1,5,0'; $d.Fill = Br $dotColor; [void]$sp.Children.Add($d) }
+        }
+        $tb = New-Object Windows.Controls.TextBlock; $tb.FontSize = 12; $tb.Text = $it.text; $tb.Foreground = Br $(if ($on) { $it.c[1] } else { '#999999' })
+        if ($on) { $tb.FontWeight = 'SemiBold' }
+        [void]$sp.Children.Add($tb); $bd.Child = $sp
+        [void]$el.runFilter.Children.Add($bd)
+    }
+}
+
 function Render {
     $el.title.Text = T 'title'
     $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.tabE2E.Text = T 'tabE2E'
@@ -860,17 +1073,18 @@ function Render {
     $el.updNew.Text = T 'updNew'; $el.updNew.Visibility = $(if ($script:updateAvailable) { 'Visible' } else { 'Collapsed' })
     if ($cfg.tab -eq 'usage') { Render-Usage }
     $el.rows.Children.Clear()
+    Render-RunFilter
     $running = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' })
-    # Summary: something running > a failed latest run of any workflow > all green
-    $latest = @{}
-    foreach ($r in ($script:runs | Where-Object { $_.status -eq 'completed' } | Sort-Object { ToUtc $_.createdAt } -Descending)) {
-        $k = "$($r.repo)|$($r.workflowName)"; if (-not $latest.ContainsKey($k)) { $latest[$k] = Get-State $r }
-    }
+    # Summary (over all accounts, also the ones the filter hides): something running > a workflow whose latest run failed > all green.
+    # With more than one account it also says where.
+    $multi = Test-Multi
+    $where = { param($keys) if (-not $multi -or -not @($keys).Count) { return '' }; ' · ' + (Short (Get-AcctLabel @($keys)[0]) 12) + $(if (@($keys).Count -gt 1) { " +$(@($keys).Count - 1)" } else { '' }) }
     if (-not (Test-Sources)) { $el.summary.Text = ''; }
-    elseif ($running.Count -gt 0) { $el.summary.Text = (T 'running') -f $running.Count; $el.summary.Foreground = Br $colors.running }
-    elseif ($latest.Values -contains 'fail') { $el.summary.Text = T 'failing'; $el.summary.Foreground = Br $colors.fail }
-    elseif ($script:runs.Count -gt 0) { $el.summary.Text = T 'green'; $el.summary.Foreground = Br $colors.ok }
+    elseif ($script:sum.running -gt 0) { $el.summary.Text = ((T 'running') -f $script:sum.running) + (& $where $script:sum.runKeys); $el.summary.Foreground = Br $colors.running }
+    elseif (@($script:sum.failKeys).Count) { $el.summary.Text = (T 'failing') + (& $where $script:sum.failKeys); $el.summary.Foreground = Br $colors.fail }
+    elseif ($script:sum.any) { $el.summary.Text = T 'green'; $el.summary.Foreground = Br $colors.ok }
     else { $el.summary.Text = '' }
+    $failing = @($script:sum.failKeys).Count -gt 0
 
     foreach ($r in $script:runs) {
         $st = Get-State $r
@@ -888,10 +1102,10 @@ function Render {
         $t1 = New-Object Windows.Controls.TextBlock
         $t1.Text = [string]$r.displayTitle; $t1.Foreground = Br '#EEEEEE'; $t1.FontSize = 13; $t1.TextTrimming = 'CharacterEllipsis'; $t1.ToolTip = [string]$r.displayTitle
         $created = ToUtc $r.createdAt
-        $parts = @(([string]$r.repo -split '/')[-1], [string]$r.workflowName)
+        $parts = @(if ($r.source -eq 'cloudflare') { [string]$r.workflowName } else { ([string]$r.repo -split '/')[-1]; [string]$r.workflowName })
         if ($r.kind -eq 'deploy') {
             # A Cloudflare deployment: the Worker's name is the title, no workflow and no duration
-            $parts = @([string]$r.repo, ((T 'cfDeployed') + $(if ($r.via) { ' ' + ((T 'cfVia') -f $r.via) } else { '' })), (Format-Ago $created))
+            $parts = @(((T 'cfDeployed') + $(if ($r.via) { ' ' + ((T 'cfVia') -f $r.via) } else { '' })), (Format-Ago $created))
         } elseif ($st -in 'running', 'queued') {
             $parts += (T $stateKey[$st]) + ' ' + (Format-Dur ((Get-Date).ToUniversalTime() - $created))
             if ($script:jobInfo.ContainsKey([string]$r.databaseId)) { $parts += ((T 'jobs') -f ($script:jobInfo[[string]$r.databaseId] -split '/')) }
@@ -900,8 +1114,15 @@ function Render {
             $parts += Format-Ago (ToUtc $r.updatedAt)
         }
         $t2 = New-Object Windows.Controls.TextBlock
-        $t2.Text = ($parts -join ' · '); $t2.Foreground = Br '#999999'; $t2.FontSize = 12; $t2.TextTrimming = 'CharacterEllipsis'
-        [void]$sp.Children.Add($t1); [void]$sp.Children.Add($t2)
+        $t2.Text = (@($parts | Where-Object { $_ }) -join ' · '); $t2.Foreground = Br '#999999'; $t2.FontSize = 12; $t2.TextTrimming = 'CharacterEllipsis'
+        if ($multi) {
+            # Which account the run belongs to: a small coloured label (source and name) in front of the grey text
+            $dp = New-Object Windows.Controls.DockPanel
+            $bdg = New-AcctBadge (Get-RowKey $r)
+            [Windows.Controls.DockPanel]::SetDock($bdg, 'Left')
+            [void]$dp.Children.Add($bdg); [void]$dp.Children.Add($t2)
+            [void]$sp.Children.Add($t1); [void]$sp.Children.Add($dp)
+        } else { [void]$sp.Children.Add($t1); [void]$sp.Children.Add($t2) }
         [void]$g.Children.Add($dot); [void]$g.Children.Add($sp)
         $row.Child = $g
         [void]$el.rows.Children.Add($row)
@@ -927,6 +1148,7 @@ function Render {
     }
     foreach ($r in ($running | Select-Object -First 4)) {
         $name = [string]$r.displayTitle; if ($name.Length -gt 34) { $name = $name.Substring(0, 33) + '…' }
+        if ($multi) { $name = (Short (Get-AcctLabel (Get-RowKey $r)) 10) + ' · ' + $name }
         $info = Format-Dur ((Get-Date).ToUniversalTime() - (ToUtc $r.createdAt))
         if ($script:jobInfo.ContainsKey([string]$r.databaseId)) { $info += ' · ' + ((T 'jobs') -f ($script:jobInfo[[string]$r.databaseId] -split '/')) }
         & $addMini $colors[(Get-State $r)] "$name  $info"
@@ -935,8 +1157,8 @@ function Render {
     if ($el.miniRows.Children.Count -eq 0) {
         if (-not (Test-Sources)) { & $addMini $colors.fail (T 'noGh') }
         elseif ($script:errors.Count) { & $addMini $colors.fail ((T 'ghErr') -f @($script:errors.Keys)[0], '') }
-        elseif ($latest.Values -contains 'fail') { & $addMini $colors.fail (T 'failing') }
-        elseif ($script:runs.Count -gt 0) { & $addMini $colors.ok (T 'green') }
+        elseif ($failing) { & $addMini $colors.fail ((T 'failing') + (& $where $script:sum.failKeys)) }
+        elseif ($script:sum.any) { & $addMini $colors.ok (T 'green') }
         else { & $addMini $colors.queued (T 'nothing') }
     }
     $el.mini.ToolTip = T 'restore'; $el.minBtn.ToolTip = T 'minimize'
@@ -961,7 +1183,7 @@ function Complete-Cycle {
                 $script:jobInfo[$ctx.id] = '{0}/{1}' -f @($jobsList | Where-Object { $_.status -eq 'completed' }).Count, $jobsList.Count
                 Render
             } catch {}
-        } @{ id = [string]$r.databaseId }
+        } @{ id = [string]$r.databaseId } (Get-RepoLogin $r.repo)
     }
 }
 
@@ -995,7 +1217,7 @@ function Refresh {
     if (-not $gh -or $repos.Count -eq 0) { Render; return }
     $script:cycle = @{ pending = $repos.Count; byRepo = @{} }
     foreach ($repo in $repos) {
-        Start-Gh "run list --repo $repo --limit $([int]$cfg.perRepo) --json databaseId,status,conclusion,displayTitle,workflowName,createdAt,updatedAt,event,headBranch,url" ${function:Receive-RunList} @{ repo = $repo }
+        Start-Gh "run list --repo $repo --limit $([int]$cfg.perRepo) --json databaseId,status,conclusion,displayTitle,workflowName,createdAt,updatedAt,event,headBranch,url" ${function:Receive-RunList} @{ repo = $repo } (Get-RepoLogin $repo)
     }
     Render
 }
@@ -1054,7 +1276,7 @@ function Start-E2E($tests) {
         param($out, $err, $code, $ctx)
         if ($code -eq 0) { Set-E2ENote ((T 'e2eStarted') -f $ctx.tests) $colors.ok; $script:since = 24 }
         else { $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }; Set-E2ENote ((T 'e2eFail') -f $m) $colors.fail }
-    } @{ tests = $tests }
+    } @{ tests = $tests } (Get-RepoLogin $repo)
 }
 # "Choose tests": a list with a check box per test. The names and descriptions come from tests/e2e/oversikt.json in the repo.
 $script:e2eList = $null; $script:e2eListAt = [datetime]::MinValue
@@ -1121,7 +1343,7 @@ function Open-E2EPicker {
             $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }
             Set-E2ENote ((T 'e2eListFail') -f $m) $colors.fail
         }
-    } @{}
+    } @{} (Get-RepoLogin $repo)
 }
 
 # ---------- menu ----------
@@ -1143,19 +1365,60 @@ foreach ($bk in 'Actions', 'Packages', 'Git LFS', 'Codespaces', 'AI') {
     } $budgetMenu
     $bi.Tag = $bk; $budgetItems[$bk] = $bi
 }
+function Show-AddRepoDialog {
+    [xml]$dx = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        SizeToContent="Height" Width="400" Background="#1E1E1E" ShowInTaskbar="False" Topmost="True">
+  <StackPanel Margin="16">
+    <TextBlock Name="lbl" Foreground="#EEEEEE" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,4"/>
+    <TextBox Name="repo" FontSize="13" Margin="0,0,0,10"/>
+    <StackPanel Name="acctBox">
+      <TextBlock Name="alb" Foreground="#EEEEEE" FontSize="13" Margin="0,0,0,4"/>
+      <ComboBox Name="acct" FontSize="13" Margin="0,0,0,10"/>
+    </StackPanel>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+      <Button Name="ok" IsDefault="True" Padding="16,4" Margin="0,0,8,0"/>
+      <Button Name="cancel" IsCancel="True" Padding="16,4"/>
+    </StackPanel>
+  </StackPanel>
+</Window>
+'@
+    $dlg = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $dx))
+    $dlg.Title = T 'mAddRepo'
+    $dlg.FindName('lbl').Text = T 'askRepo'; $dlg.FindName('alb').Text = T 'ghAcctLbl'
+    $dlg.FindName('ok').Content = T 'cfAdd'; $dlg.FindName('cancel').Content = T 'cfCancel'
+    $cb = $dlg.FindName('acct'); $gha = @(Get-GhAccounts)
+    foreach ($a in $gha) {
+        $it = New-Object Windows.Controls.ComboBoxItem; $it.Content = "$(if ($a.label) { $a.label } else { $a.login })  ($($a.login))"; $it.Tag = [string]$a.login
+        [void]$cb.Items.Add($it)
+        if ([string]$a.login -eq [string]$cfg.ghActive) { $cb.SelectedItem = $it }
+    }
+    if ($cb.SelectedIndex -lt 0 -and $cb.Items.Count) { $cb.SelectedIndex = 0 }
+    if ($gha.Count -lt 2) { $dlg.FindName('acctBox').Visibility = 'Collapsed' }
+    $dlg.FindName('ok').Add_Click({ $dlg.DialogResult = $true })
+    $dlg.Add_ContentRendered({ $dlg.FindName('repo').Focus() | Out-Null })
+    if ($dlg.ShowDialog() -ne $true) { return $null }
+    $sel = $cb.SelectedItem
+    @{ repo = $dlg.FindName('repo').Text; login = $(if ($sel) { [string]$sel.Tag } else { '' }) }
+}
 AddItem 'mAddRepo' {
-    $v = ([Microsoft.VisualBasic.Interaction]::InputBox((T 'askRepo'), (T 'title'), '')).Trim()
+    $r = Show-AddRepoDialog
+    if (-not $r) { return }
+    $v = ([string]$r.repo).Trim()
     if (-not $v) { return }
     if ($v -notmatch '^[\w.-]+/[\w.-]+$') { [void][Windows.MessageBox]::Show((T 'badRepo'), (T 'title')); return }
-    if ((Get-Repos) -notcontains $v) { $cfg.repos = @((Get-Repos) + $v); Save-Config }
+    if ((Get-Repos) -notcontains $v) { $cfg.repos = @((Get-Repos) + $v) }
+    $lg = if ($r.login) { [string]$r.login } else { Get-RepoLogin '' }
+    if ($lg) { $cfg.repoAcct[$v] = $lg }
+    Save-Config
     Refresh
 } | Out-Null
 $removeMenu = AddItem 'mRemoveRepo' {}
 $removeMenu.Add_SubmenuOpened({
     $removeMenu.Items.Clear()
     foreach ($repo in (Get-Repos)) {
-        $mi = New-Object Windows.Controls.MenuItem; $mi.Header = $repo; $mi.Tag = $repo
-        $mi.Add_Click({ $r = $this.Tag; $cfg.repos = @((Get-Repos) | Where-Object { $_ -ne $r }); Save-Config; $script:ghRuns = @($script:ghRuns | Where-Object { $_.repo -ne $r }); $script:runs = @($script:runs | Where-Object { $_.repo -ne $r }); $script:errors.Remove($r); Render; Refresh })
+        $mi = New-Object Windows.Controls.MenuItem; $mi.Header = $(if (Test-Multi) { "$repo  ($(Get-AcctLabel ('gh:' + (Get-RepoLogin $repo))))" } else { $repo }); $mi.Tag = $repo
+        $mi.Add_Click({ $r = $this.Tag; $cfg.repos = @((Get-Repos) | Where-Object { $_ -ne $r }); $cfg.repoAcct.Remove($r); Save-Config; $script:ghRuns = @($script:ghRuns | Where-Object { $_.repo -ne $r }); $script:runs = @($script:runs | Where-Object { $_.repo -ne $r }); $script:errors.Remove($r); Render; Refresh })
         [void]$removeMenu.Items.Add($mi)
     }
 })
@@ -1208,6 +1471,31 @@ function Add-CfAccount {
         Refresh
     } @{ label = $label; enc = $enc }
 }
+# GitHub accounts: the logins gh knows. A second account is signed in with gh itself (a window opens), the widget never sees a password.
+$ghMenu = AddItem 'mGh' {}
+AddItem 'mGhAdd' {
+    if (-not $gh) { [void][Windows.MessageBox]::Show((T 'noGh'), (T 'title')); return }
+    $hint = (T 'ghSignIn') -replace "'", ''
+    $c = "Write-Host '$hint'; & '$gh' auth login --hostname github.com --web --git-protocol https --scopes repo,workflow,read:org,user"
+    Start-Process powershell.exe -ArgumentList '-NoProfile', '-NoExit', '-Command', $c
+} $ghMenu | Out-Null
+AddItem 'mGhRefresh' { Refresh-GhAccounts } $ghMenu | Out-Null
+$ghNameMenu = AddItem 'mGhName' {} $ghMenu
+$ghNameMenu.Add_SubmenuOpened({
+    $ghNameMenu.Items.Clear()
+    foreach ($a in (Get-GhAccounts)) {
+        $mi = New-Object Windows.Controls.MenuItem; $mi.Header = "$(if ($a.label) { $a.label } else { $a.login })  ($($a.login))"; $mi.Tag = [string]$a.login
+        $mi.Add_Click({
+            $lg = $this.Tag
+            $acct = Get-GhAccounts | Where-Object { [string]$_.login -eq $lg } | Select-Object -First 1
+            $v = ([Microsoft.VisualBasic.Interaction]::InputBox(((T 'ghAskLabel') -f $lg), (T 'title'), [string]$acct.label)).Trim()
+            if (-not $v) { return }
+            $acct.label = $v; Save-Config; Render
+        })
+        [void]$ghNameMenu.Items.Add($mi)
+    }
+})
+[void]$ghNameMenu.Items.Add((New-Object Windows.Controls.MenuItem))
 $cfMenu = AddItem 'mCf' {}
 AddItem 'mCfAdd' { Add-CfAccount } $cfMenu | Out-Null
 $cfRemoveMenu = AddItem 'mCfRemove' {} $cfMenu
@@ -1267,7 +1555,8 @@ $win.Add_MouseLeftButtonDown({
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
         elseif ($act -eq 'cmd:e2e:ask') { Open-E2EPicker }
         elseif ($act -like 'cmd:e2e:*') { Start-E2E ($act -replace '^cmd:e2e:', '') }
-        elseif ($act -like 'cmd:src:*') { $script:usageSrc = $act -replace '^cmd:src:', ''; $cfg.usageSrc = $script:usageSrc; Save-Config; if (-not (Get-UsageAt)) { Refresh-Usage }; Render }
+        elseif ($act -like 'cmd:src:*') { Set-UsageSrc ($act -replace '^cmd:src:', ''); Save-Config; if (-not (Get-UsageAt)) { Refresh-Usage }; Render }
+        elseif ($act -like 'cmd:flt:*') { $script:runFilter = $act -replace '^cmd:flt:', ''; $cfg.runFilter = $script:runFilter; Save-Config; Select-Visible; Render }
         elseif ($act -like 'cmd:svc:*') { $script:usageSel = $act -replace '^cmd:svc:', ''; $cfg.usageSel = $script:usageSel; Save-Config; Render }
         elseif ($act) { Start-Process $act }
     } elseif ($cfg.minimized) { $cfg.miniLeft = $win.Left; $cfg.miniTop = $win.Top; Save-Config }
@@ -1281,6 +1570,7 @@ $timer.Interval = [TimeSpan]::FromSeconds(1)
 $timer.Add_Tick({
     Receive-Jobs
     Receive-CfJobs
+    if (((Get-Date) - $script:ghAcctCheckedAt).TotalMinutes -ge 5 -and -not $script:cycle) { Refresh-GhAccounts }
     Receive-UpdateCheck
     # Every six hours; every ten minutes while the notice is showing, because GitHub's raw files are cached for a few minutes
     # and a freshly pushed version can look "new" to a widget that already has it
