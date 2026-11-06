@@ -107,3 +107,5 @@ Where the token lives: encrypted with Windows DPAPI (the same Windows user on th
 ## Tabs
 
 Drag a tab sideways to move it; the order is kept. A click without moving still opens the tab.
+
+The account chips (the filter row on Runs and the source row on Usage) can be dragged into another order the same way. The order is shared by both rows; the colour stays with the account.

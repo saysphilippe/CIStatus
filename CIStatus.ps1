@@ -6,7 +6,7 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
-$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github'; ghAccounts = @(); ghActive = ''; repoAcct = $null; runFilter = 'all'; tabOrder = @('runs', 'usage', 'e2e') }
+$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github'; ghAccounts = @(); ghActive = ''; repoAcct = $null; runFilter = 'all'; tabOrder = @('runs', 'usage', 'e2e'); acctOrder = @() }
 if (Test-Path $cfgPath) {
     try { (Get-Content $cfgPath -Raw | ConvertFrom-Json).psobject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } } catch {}
 }
@@ -35,6 +35,13 @@ function Get-RepoLogin($repo) {
     ''
 }
 function Get-Accounts {
+    $l = @(Get-AcctsNatural)
+    # The order the person dragged the chips into (cfg.acctOrder); accounts not in it keep their place at the end
+    $o = @($cfg.acctOrder | ForEach-Object { [string]$_ })
+    if (-not $o.Count) { return $l }
+    @($l | Sort-Object { $i = [array]::IndexOf($o, $_.key); if ($i -lt 0) { 999 } else { $i } })
+}
+function Get-AcctsNatural {
     $l = @()
     $gha = @(Get-GhAccounts)
     if ($gha.Count) { foreach ($a in $gha) { $l += [pscustomobject]@{ key = "gh:$($a.login)"; src = 'GH'; label = $(if ($a.label) { [string]$a.label } else { [string]$a.login }); id = [string]$a.login } } }
@@ -54,7 +61,7 @@ function Test-Multi { @(Get-Accounts).Count -gt 1 }
 $acctPalette = @( @('#2F4B6B', '#A8CBF2'), @('#4B3A6B', '#CDB9F2'), @('#2F5E5A', '#A5E3D8'), @('#6B3A4B', '#F2B9CD'), @('#5E5A2F', '#E3DDA5'), @('#3A4B5E', '#B9CCDF') )
 function Get-AcctColor($key) {
     $i = 0; $n = 0
-    foreach ($a in (Get-Accounts)) { if ($a.key -eq $key) { $i = $n; break }; $n++ }
+    foreach ($a in (Get-AcctsNatural)) { if ($a.key -eq $key) { $i = $n; break }; $n++ }   # the colour stays with the account when the chips are moved
     $acctPalette[$i % $acctPalette.Count]
 }
 function Short($s, $n) { $s = [string]$s; if ($s.Length -gt $n) { $s.Substring(0, $n - 1) + '…' } else { $s } }
@@ -1556,13 +1563,18 @@ $win.Add_SizeChanged({ if ($win.IsLoaded) { Keep-OnScreen } })
 # Drag the window; a click without moving opens the run under the mouse, or minimizes / restores
 $win.Add_MouseLeftButtonDown({
     param($s, $e)
-    $src = $e.OriginalSource; $act = $null
+    $src = $e.OriginalSource; $act = $null; $actEl = $null
     while ($src -and -not $act) {
-        if ($src -is [Windows.FrameworkElement] -and $src.Tag -is [string] -and ($src.Tag -like 'http*' -or $src.Tag -like 'cmd:*')) { $act = $src.Tag }
+        if ($src -is [Windows.FrameworkElement] -and $src.Tag -is [string] -and ($src.Tag -like 'http*' -or $src.Tag -like 'cmd:*')) { $act = $src.Tag; $actEl = $src }
         $src = if ($src -is [Windows.Media.Visual] -or $src -is [Windows.Media.Media3D.Visual3D]) { [Windows.Media.VisualTreeHelper]::GetParent($src) } else { $null }
     }
     if ($act -like 'cmd:tab:*') {
         $script:tabDrag = @{ key = ($act -replace '^cmd:tab:', ''); x0 = $e.GetPosition($el.tabBar).X; moved = $false }
+        [void]$win.CaptureMouse()
+        return
+    }
+    if ($act -match '^cmd:(flt|src):' -and $act -ne 'cmd:flt:all' -and $actEl.Parent -is [Windows.Controls.WrapPanel]) {
+        $script:chipDrag = @{ act = $act; el = $actEl; panel = $actEl.Parent; p0 = $e.GetPosition($actEl.Parent); moved = $false }
         [void]$win.CaptureMouse()
         return
     }
@@ -1617,8 +1629,23 @@ function Set-TabOrder {
 function Get-TabOrder { @($el.tabBar.Children | ForEach-Object { ([string]$_.Tag) -replace '^cmd:tab:', '' }) }
 Set-TabOrder
 $script:tabDrag = $null
+$script:chipDrag = $null
 $win.Add_MouseMove({
     param($s, $e)
+    if ($script:chipDrag) {
+        # A chip (account) is dragged inside its row: it changes place with the chip under the mouse
+        $cd = $script:chipDrag; $pt = $e.GetPosition($cd.panel)
+        if ([math]::Abs($pt.X - $cd.p0.X) + [math]::Abs($pt.Y - $cd.p0.Y) -gt 6) { $cd.moved = $true }
+        if (-not $cd.moved) { return }
+        foreach ($c in @($cd.panel.Children)) {
+            $tl = $c.TranslatePoint([Windows.Point]::new(0, 0), $cd.panel)
+            if ($pt.X -ge $tl.X -and $pt.X -lt ($tl.X + $c.ActualWidth + 6) -and $pt.Y -ge $tl.Y -and $pt.Y -lt ($tl.Y + $c.ActualHeight + 4)) {
+                if ($c -ne $cd.el -and $c.Tag -ne 'cmd:flt:all') { $i = $cd.panel.Children.IndexOf($c); $cd.panel.Children.Remove($cd.el); $cd.panel.Children.Insert($i, $cd.el) }
+                break
+            }
+        }
+        return
+    }
     if (-not $script:tabDrag) { return }
     $x = $e.GetPosition($el.tabBar).X
     if ([math]::Abs($x - $script:tabDrag.x0) -gt 4) { $script:tabDrag.moved = $true }
@@ -1633,6 +1660,17 @@ $win.Add_MouseMove({
     }
 })
 $win.Add_MouseLeftButtonUp({
+    if ($script:chipDrag) {
+        $cd = $script:chipDrag; $script:chipDrag = $null
+        $win.ReleaseMouseCapture()
+        if ($cd.moved) {
+            $cfg.acctOrder = @($cd.panel.Children | ForEach-Object { ([string]$_.Tag) -replace '^cmd:(flt|src):', '' } | Where-Object { $_ -and $_ -ne 'all' })
+            Save-Config; Render
+        }
+        elseif ($cd.act -like 'cmd:src:*') { Set-UsageSrc ($cd.act -replace '^cmd:src:', ''); Save-Config; if (-not (Get-UsageAt)) { Refresh-Usage }; Render }
+        else { $script:runFilter = $cd.act -replace '^cmd:flt:', ''; $cfg.runFilter = $script:runFilter; Save-Config; Select-Visible; Render }
+        return
+    }
     if (-not $script:tabDrag) { return }
     $d = $script:tabDrag; $script:tabDrag = $null
     $win.ReleaseMouseCapture()
