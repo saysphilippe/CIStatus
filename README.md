@@ -1,10 +1,11 @@
 # CI Status
 
-A small always-on-top Windows desktop widget that shows the state of your GitHub Actions runs, so you can see whether a push is still building, finished green or failed without opening GitHub.
+A small always-on-top Windows desktop widget that shows the state of your GitHub Actions runs and your Cloudflare builds and deployments (several Cloudflare accounts at once), so you can see whether a push is still building, finished green or failed without opening GitHub or Cloudflare.
 
 - Latest runs across the repositories you watch, newest first, with a coloured dot: yellow = running (with elapsed time and `jobs done/total`), green = success, red = failed, grey = cancelled/skipped/queued.
 - Header summary: `N running`, `Failing` (the latest run of some workflow failed) or `All green`.
 - When a run that was running finishes, a line at the top announces it for a minute.
+- **Several Cloudflare accounts** (for example work and private) next to GitHub: builds from Workers Builds and the latest deployment of each Worker show up as rows on the Runs tab, marked with the account's name. The Usage tab gets a switch (GitHub, then one entry per account) with today's Workers requests, D1 rows read and written and Workers AI neurons against the Workers Free daily allowance. See [Cloudflare accounts](#cloudflare-accounts).
 - **Usage tab** (next to Runs): this month's GitHub Actions usage from the billing API (`gh api users/<you>/settings/billing/usage/summary`, needs the `user` scope on your `gh` login). It opens with a bar chart of usage per day and an **All services** list (with what is billable this month in the heading) with one row per service, also when nothing was used: Actions, Packages, Git LFS, Codespaces and AI credits (all Copilot / premium request SKUs, read from the premium request report). Each row shows the quantities and what is billable against that service's monthly budget, with a small bar and the same month marker. **Click a row and the bar chart (usage per day, in the service's own unit) and the per-repository list switch to that service.** Anything else GitHub reports ends up under Other. 
 - **E2E tab** (next to Usage): starts the manual `E2E (manuelt)` workflow in the first watched repo (`e2eRepo` in `config.json` overrides it) with `gh workflow run e2e.yml -f tests=...`. Three buttons: **Relevant tests** (the tests that belong to the files changed in the last commit), **All tests** (split into 4 parts) and **Choose tests...** (a window with a check box and a short description per test, read from `tests/e2e/oversikt.json` in the repo; ticking everything runs all of them). The run then shows up on the Runs tab like any other run. Needs `gh` logged in with permission to run workflows.
 - Budgets: GitHub does not give out budgets or spending limits for personal accounts through the API, so they are stored in the widget, one monthly budget per service (right-click, *Budget per service*, `0` clears). The budgets start out as the ones on github.com/settings/billing/budgets when they were read on 2026-10-25: Actions $10, Packages $10, Git LFS $5, Codespaces $5, AI credits $5. GitHub reports usage with a delay of an hour or more. A link at the bottom of the full widget opens your GitHub billing overview (github.com/settings/billing/summary).
@@ -48,7 +49,24 @@ Right-click the widget:
 | Always on top | Toggle |
 | Language | English / Norsk / Svenska / Dansk |
 
+The **Cloudflare accounts** submenu adds and removes accounts (see below).
+
 By default it watches `saysphilippe/Nerdehagen`. The list, the number of runs per repository (`perRepo`, 5), the maximum number of rows (`maxRows`, 8), the budgets (`budgets`) and the selected service (`usageSel`) are stored in `%LOCALAPPDATA%\CIStatus\config.json`.
+
+## Cloudflare accounts
+
+The widget can read any number of Cloudflare accounts at the same time, each with its own API token. Nothing is changed on Cloudflare: it only makes `GET` calls and one read-only GraphQL analytics query.
+
+1. In each Cloudflare account, create a token at <https://dash.cloudflare.com/profile/api-tokens> (Create Token, Custom token) with **Read** access to **Workers Scripts**, **Workers Builds Configuration**, **Account Analytics** and **Account Settings**, limited to that account.
+2. Right-click the widget, **Cloudflare accounts**, **Add account…**. Type a name (for example `Work` or `Private`) and paste the token. The widget checks it by listing the accounts the token can see; a token that sees several accounts adds all of them.
+3. **Remove account** in the same submenu removes one again.
+
+What it shows:
+
+- **Runs tab:** the newest build per Worker from Workers Builds (yellow = running or queued, green = success, red = failed) and the latest deployment of each Worker (`deployed via wrangler`, `dash` or `api`). A deployment that is the result of a successful build gets no row of its own. Anything that is running always shows; of the rest only the newest `cfPerAccount` rows per account (3) are kept, and the list is cut to `maxRows` together with the GitHub runs. Click a row to open the Worker in the Cloudflare dashboard. A missing permission shows up as a red line saying which permissions to check.
+- **Usage tab:** a switch at the top (GitHub, then each account). For a Cloudflare account it shows today's use (UTC day) of Workers requests (100,000 a day), D1 rows read (5 million) and written (100,000) and Workers AI neurons (10,000), with a bar against the **Workers Free daily allowance**. Yellow from 80 %, red at 100 %. On a paid plan the bars are only a reference, since the paid plan has other limits. The numbers come from Cloudflare's analytics and run a few minutes behind.
+
+Where the token lives: encrypted with Windows DPAPI (the same Windows user on the same machine can decrypt it, nobody else) in `%LOCALAPPDATA%\CIStatus\config.json`. It is not in this repository and is never shown again. Copying `config.json` to another computer or user does not carry the accounts over; add them again there. Deleting an account's entry (or the whole config) removes the token from the machine; to revoke it for good, delete the token in the Cloudflare dashboard.
 
 ## Uninstall
 
@@ -57,6 +75,7 @@ By default it watches `saysphilippe/Nerdehagen`. The list, the number of runs pe
 ## Notes for development
 
 - `CIStatus.ps1` must be saved as UTF-8 **with** BOM (Nordic letters); `install.ps1` must stay ASCII without BOM (it runs through `iex`).
+- Test without real tokens: `CISTATUS_CF_FIXTURE=<json>` (accounts, runs, usage per account id) shows Cloudflare rows and usage without any network call, like `CISTATUS_FIXTURE` does for GitHub. `CISTATUS_CF_API=http://127.0.0.1:<port>` points the Cloudflare calls at a local stub (only a local address is accepted).
 - `gh` runs as a .NET process whose output is read by `ReadToEndAsync` tasks; a `DispatcherTimer` collects the results. No PowerShell runs on background threads.
 - `CISTATUS_USAGE_FIXTURE` can point to a JSON file `{ "summary": ..., "items": [...] }` (the two billing responses) for the Usage tab.
 - `CISTATUS_FIXTURE` can point to a JSON file with runs to show instead of calling `gh`, which is handy for checking the layout.

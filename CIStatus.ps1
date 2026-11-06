@@ -6,7 +6,7 @@ $scriptPath = $MyInvocation.MyCommand.Path
 $cfgPath = Join-Path $dir 'config.json'
 $inv     = [Globalization.CultureInfo]::InvariantCulture
 
-$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions' }
+$cfg = [ordered]@{ topmost = $true; left = 100; top = 100; language = 'en'; repos = @('saysphilippe/Nerdehagen'); perRepo = 5; maxRows = 8; minimized = $false; miniLeft = $null; miniTop = $null; tab = 'runs'; actionsIncluded = 2000; quotaMinutes = $null; budgets = $null; usageSel = 'Actions'; cfAccounts = @(); cfPerAccount = 3; usageSrc = 'github' }
 if (Test-Path $cfgPath) {
     try { (Get-Content $cfgPath -Raw | ConvertFrom-Json).psobject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } } catch {}
 }
@@ -14,8 +14,10 @@ if (Test-Path $cfgPath) {
 $b = [ordered]@{ Actions = 10; Packages = 10; 'Git LFS' = 5; Codespaces = 5; AI = 5 }
 if ($cfg.budgets -and $cfg.budgets -isnot [System.Collections.IDictionary]) { $cfg.budgets.PSObject.Properties | ForEach-Object { $b[$_.Name] = $_.Value } }
 $cfg.budgets = $b
-function Save-Config { $cfg | ConvertTo-Json | Set-Content $cfgPath -Encoding UTF8 }
+function Save-Config { $cfg | ConvertTo-Json -Depth 5 | Set-Content $cfgPath -Encoding UTF8 }
 function Get-Repos { @($cfg.repos | Where-Object { $_ }) }
+# Something to read from: the GitHub CLI or at least one Cloudflare account
+function Test-Sources { [bool]$gh -or (@(Get-CfAccounts).Count -gt 0) }
 
 $strings = @{
     en = @{
@@ -44,6 +46,15 @@ $strings = @{
         e2ePick = 'Tick the tests to run'; e2eSelAll = 'Select all'; e2eSelNone = 'Select none'; e2eRunN = 'Run {0} tests'; e2eCancel = 'Cancel'; e2eLoadingList = 'Reading the test list…'; e2eListFail = 'Could not read the test list: {0}'
         e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
+        mCf = 'Cloudflare accounts'; mCfAdd = 'Add account…'; mCfRemove = 'Remove account'
+        cfAskLabel = 'Name for this Cloudflare account (for example Work or Private):'; cfAskToken = 'API token (read only):'; cfAdd = 'Add'; cfCancel = 'Cancel'
+        cfTokenHelp = 'Create the token at dash.cloudflare.com/profile/api-tokens with Read access to: Workers Scripts, Workers Builds Configuration, Account Analytics and Account Settings. It is stored encrypted for your Windows user only.'
+        cfAdded = 'Added: {0}'; cfAddFail = 'Could not add the account: {0}'; cfNoAccess = 'The token cannot see any Cloudflare account.'
+        cfPerm = 'No access. Check the token permissions (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
+        cfDeployed = 'deployed'; cfVia = 'via {0}'; cfNoDeploys = 'No Workers found'
+        linkUsageCf = 'Open Cloudflare dashboard ↗'; uCfHead = '{0} · today (UTC)'; uCfBars = 'Today against the Workers Free daily allowance'
+        uCfLag = 'Cloudflare analytics run a few minutes behind. The allowance resets at 00:00 UTC.'; uCfLoading = 'Reading Cloudflare…'
+        cfWReq = 'Workers requests'; cfD1R = 'D1 rows read'; cfD1W = 'D1 rows written'; cfAi = 'Workers AI neurons'
         noGh = 'The GitHub CLI (gh) was not found. Install it and run: gh auth login'; ghErr = 'Could not read {0}: {1}'
     }
     no = @{
@@ -72,6 +83,15 @@ $strings = @{
         e2ePick = 'Kryss av testene som skal kjøres'; e2eSelAll = 'Velg alle'; e2eSelNone = 'Fjern alle'; e2eRunN = 'Kjør {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Leser testlisten…'; e2eListFail = 'Kunne ikke lese testlisten: {0}'
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
+        mCf = 'Cloudflare-kontoer'; mCfAdd = 'Legg til konto…'; mCfRemove = 'Fjern konto'
+        cfAskLabel = 'Navn på denne Cloudflare-kontoen (for eksempel Jobb eller Privat):'; cfAskToken = 'API-token (bare lesing):'; cfAdd = 'Legg til'; cfCancel = 'Avbryt'
+        cfTokenHelp = 'Lag tokenet på dash.cloudflare.com/profile/api-tokens med lesetilgang (Read) til: Workers Scripts, Workers Builds Configuration, Account Analytics og Account Settings. Det lagres kryptert, bare for din Windows-bruker.'
+        cfAdded = 'Lagt til: {0}'; cfAddFail = 'Kunne ikke legge til kontoen: {0}'; cfNoAccess = 'Tokenet ser ingen Cloudflare-konto.'
+        cfPerm = 'Ingen tilgang. Sjekk rettighetene til tokenet (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
+        cfDeployed = 'publisert'; cfVia = 'via {0}'; cfNoDeploys = 'Ingen Workers funnet'
+        linkUsageCf = 'Åpne Cloudflare-dashbordet ↗'; uCfHead = '{0} · i dag (UTC)'; uCfBars = 'I dag mot gratisgrensen per dag for Workers'
+        uCfLag = 'Cloudflare-statistikken går noen minutter etter. Grensen nullstilles kl. 00:00 UTC.'; uCfLoading = 'Leser fra Cloudflare…'
+        cfWReq = 'Workers-kall'; cfD1R = 'D1 rader lest'; cfD1W = 'D1 rader skrevet'; cfAi = 'Workers AI-neuroner'
         noGh = 'GitHub CLI (gh) ble ikke funnet. Installer den og kjør: gh auth login'; ghErr = 'Kunne ikke lese {0}: {1}'
     }
     sv = @{
@@ -100,6 +120,15 @@ $strings = @{
         e2ePick = 'Kryssa i testerna som ska köras'; e2eSelAll = 'Markera alla'; e2eSelNone = 'Avmarkera alla'; e2eRunN = 'Kör {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Läser testlistan…'; e2eListFail = 'Kunde inte läsa testlistan: {0}'
         e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
+        mCf = 'Cloudflare-konton'; mCfAdd = 'Lägg till konto…'; mCfRemove = 'Ta bort konto'
+        cfAskLabel = 'Namn på det här Cloudflare-kontot (till exempel Jobb eller Privat):'; cfAskToken = 'API-token (endast läsning):'; cfAdd = 'Lägg till'; cfCancel = 'Avbryt'
+        cfTokenHelp = 'Skapa token på dash.cloudflare.com/profile/api-tokens med läsbehörighet (Read) till: Workers Scripts, Workers Builds Configuration, Account Analytics och Account Settings. Den lagras krypterad, bara för din Windows-användare.'
+        cfAdded = 'Tillagt: {0}'; cfAddFail = 'Kunde inte lägga till kontot: {0}'; cfNoAccess = 'Token ser inget Cloudflare-konto.'
+        cfPerm = 'Ingen åtkomst. Kontrollera behörigheterna för token (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
+        cfDeployed = 'publicerad'; cfVia = 'via {0}'; cfNoDeploys = 'Inga Workers hittades'
+        linkUsageCf = 'Öppna Cloudflare-instrumentpanelen ↗'; uCfHead = '{0} · idag (UTC)'; uCfBars = 'Idag mot gratisgränsen per dag för Workers'
+        uCfLag = 'Cloudflares statistik ligger några minuter efter. Gränsen nollställs kl. 00:00 UTC.'; uCfLoading = 'Läser från Cloudflare…'
+        cfWReq = 'Workers-anrop'; cfD1R = 'D1 rader lästa'; cfD1W = 'D1 rader skrivna'; cfAi = 'Workers AI-neuroner'
         noGh = 'GitHub CLI (gh) hittades inte. Installera den och kör: gh auth login'; ghErr = 'Kunde inte läsa {0}: {1}'
     }
     da = @{
@@ -128,6 +157,15 @@ $strings = @{
         e2ePick = 'Afkryds de tests der skal køre'; e2eSelAll = 'Vælg alle'; e2eSelNone = 'Fravælg alle'; e2eRunN = 'Kør {0} tests'; e2eCancel = 'Annuller'; e2eLoadingList = 'Læser testlisten…'; e2eListFail = 'Kunne ikke læse testlisten: {0}'
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
+        mCf = 'Cloudflare-konti'; mCfAdd = 'Tilføj konto…'; mCfRemove = 'Fjern konto'
+        cfAskLabel = 'Navn på denne Cloudflare-konto (for eksempel Job eller Privat):'; cfAskToken = 'API-token (kun læsning):'; cfAdd = 'Tilføj'; cfCancel = 'Annuller'
+        cfTokenHelp = 'Opret tokenet på dash.cloudflare.com/profile/api-tokens med læseadgang (Read) til: Workers Scripts, Workers Builds Configuration, Account Analytics og Account Settings. Det gemmes krypteret, kun for din Windows-bruger.'
+        cfAdded = 'Tilføjet: {0}'; cfAddFail = 'Kunne ikke tilføje kontoen: {0}'; cfNoAccess = 'Tokenet kan ikke se nogen Cloudflare-konto.'
+        cfPerm = 'Ingen adgang. Kontroller tokenets rettigheder (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
+        cfDeployed = 'udgivet'; cfVia = 'via {0}'; cfNoDeploys = 'Ingen Workers fundet'
+        linkUsageCf = 'Åbn Cloudflare-dashboardet ↗'; uCfHead = '{0} · i dag (UTC)'; uCfBars = 'I dag mod gratisgrænsen pr. dag for Workers'
+        uCfLag = 'Cloudflares statistik er nogle minutter bagud. Grænsen nulstilles kl. 00:00 UTC.'; uCfLoading = 'Læser fra Cloudflare…'
+        cfWReq = 'Workers-kald'; cfD1R = 'D1 rækker læst'; cfD1W = 'D1 rækker skrevet'; cfAi = 'Workers AI-neuroner'
         noGh = 'GitHub CLI (gh) blev ikke fundet. Installer den og kør: gh auth login'; ghErr = 'Kunne ikke læse {0}: {1}'
     }
 }
@@ -247,6 +285,7 @@ function Format-Dur($ts) {
         <TextBlock Name="e2eNote" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
       </StackPanel>
       <StackPanel Name="usagePanel" Visibility="Collapsed">
+        <WrapPanel Name="uSrc" Margin="0,0,0,8" Visibility="Collapsed"/>
         <TextBlock Name="uDailyHead" Foreground="#EEE" FontSize="14"/>
         <Canvas Name="uDaily" Width="368" Height="52" Margin="0,4,0,0" HorizontalAlignment="Left"/>
         <TextBlock Name="uReposHead" Foreground="#EEE" FontSize="14" Margin="0,10,0,2"/>
@@ -265,7 +304,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -278,6 +317,232 @@ $script:flashColor = '#EEEEEE'
 $script:updatedAt = $null
 $script:cycle = $null
 $script:since = 999
+
+$script:ghRuns = @()          # GitHub runs from the last refresh (before the list is cut to maxRows)
+$script:cfRuns = @()          # builds and deployments from the Cloudflare accounts
+$script:cfCycle = $null
+
+# ---------- Cloudflare accounts ----------
+# One API token per account (read only). The token is encrypted with Windows DPAPI for this Windows user and kept in config.json; it is
+# never shown again, and nothing on Cloudflare is changed (GET calls and one read-only GraphQL analytics query).
+$cfApi = 'https://api.cloudflare.com/client/v4'
+if ($env:CISTATUS_CF_API -match '^http://(127\.0\.0\.1|localhost)(:\d+)?(/|$)') { $cfApi = $env:CISTATUS_CF_API.TrimEnd('/') }   # local test server only
+$script:cfFixture = $null
+if ($env:CISTATUS_CF_FIXTURE -and (Test-Path $env:CISTATUS_CF_FIXTURE)) { $script:cfFixture = Get-Content $env:CISTATUS_CF_FIXTURE -Raw -Encoding UTF8 | ConvertFrom-Json }
+function Get-CfAccounts {
+    if ($script:cfFixture) { return @($script:cfFixture.accounts) }
+    @($cfg.cfAccounts | Where-Object { $_ -and $_.id -and $_.token })
+}
+function Protect-Token($plain) { ConvertTo-SecureString $plain -AsPlainText -Force | ConvertFrom-SecureString }
+function Unprotect-Token($enc) {
+    $ss = ConvertTo-SecureString $enc
+    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($ss)
+    try { [Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+}
+$script:cfClients = @{}
+function Get-CfClient($acct) {
+    $key = [string]$acct.id
+    if ($key -and $script:cfClients.ContainsKey($key)) { return $script:cfClients[$key] }
+    $c = New-Object Net.Http.HttpClient; $c.Timeout = [TimeSpan]::FromSeconds(30)
+    [void]$c.DefaultRequestHeaders.UserAgent.ParseAdd('CIStatus')
+    $c.DefaultRequestHeaders.Authorization = New-Object Net.Http.Headers.AuthenticationHeaderValue('Bearer', (Unprotect-Token $acct.token))
+    if ($key) { $script:cfClients[$key] = $c }
+    $c
+}
+# Requests are .NET tasks, like the gh processes: nothing runs on a background thread, the timer picks the results up.
+$script:cfJobs = New-Object System.Collections.ArrayList
+function Start-Cf($acct, $method, $path, $body, $onDone, $ctx) {
+    try {
+        $client = Get-CfClient $acct
+        $req = New-Object Net.Http.HttpRequestMessage((New-Object Net.Http.HttpMethod($method)), ($cfApi + $path))
+        if ($body) { $req.Content = New-Object Net.Http.StringContent($body, [Text.Encoding]::UTF8, 'application/json') }
+        [void]$script:cfJobs.Add(@{ task = $client.SendAsync($req); stage = 1; resp = $null; status = 0; done = $onDone; ctx = $ctx; started = Get-Date })
+    } catch {
+        & $onDone '' 0 'token' $ctx   # e.g. the token was encrypted by another Windows user
+    }
+}
+function Receive-CfJobs {
+    for ($i = $script:cfJobs.Count - 1; $i -ge 0; $i--) {
+        $j = $script:cfJobs[$i]
+        if (((Get-Date) - $j.started).TotalSeconds -gt 40) { $script:cfJobs.RemoveAt($i); & $j.done '' 0 'timeout' $j.ctx; continue }
+        if (-not $j.task.IsCompleted) { continue }
+        if ($j.task.IsFaulted -or $j.task.IsCanceled) {
+            $script:cfJobs.RemoveAt($i)
+            $m = if ($j.task.Exception) { $j.task.Exception.GetBaseException().Message } else { 'cancelled' }
+            & $j.done '' 0 $m $j.ctx; continue
+        }
+        if ($j.stage -eq 1) {
+            $j.resp = $j.task.Result; $j.status = [int]$j.resp.StatusCode
+            $j.task = $j.resp.Content.ReadAsStringAsync(); $j.stage = 2
+            if (-not $j.task.IsCompleted) { continue }
+            if ($j.task.IsFaulted -or $j.task.IsCanceled) { $script:cfJobs.RemoveAt($i); & $j.done '' $j.status 'read' $j.ctx; continue }
+        }
+        $script:cfJobs.RemoveAt($i)
+        & $j.done $j.task.Result $j.status '' $j.ctx
+    }
+}
+function Get-CfErr($body, $status, $err) {
+    if ($status -eq 401 -or $status -eq 403) { return (T 'cfPerm') }
+    if ($err) { $m = [string]$err }
+    else {
+        $m = "HTTP $status"
+        try { $e = @(($body | ConvertFrom-Json).errors); if ($e.Count -and $e[0].message) { $m = [string]$e[0].message } } catch {}
+    }
+    if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }
+    $m
+}
+
+# Builds (Workers Builds) and the latest deployment of every Worker, as rows in the same shape as the GitHub runs.
+function Finish-CfAcct($acct, $items, $errMsg) {
+    $key = "Cloudflare/$($acct.label)"
+    if ($errMsg) { $script:errors[$key] = $errMsg } else { $script:errors.Remove($key) }
+    if (-not $script:cfCycle) { return }
+    $script:cfCycle.byAcct[[string]$acct.id] = @($items)
+    $script:cfCycle.pending--
+    if ($script:cfCycle.pending -le 0) {
+        $all = @(); foreach ($v in $script:cfCycle.byAcct.Values) { $all += @($v) }
+        $script:cfRuns = $all; $script:cfCycle = $null
+        Merge-Runs
+    }
+}
+function Receive-CfScripts($body, $status, $err, $ctx) {
+    $a = $ctx.acct
+    if ($err -or $status -ne 200) { Finish-CfAcct $a @() (Get-CfErr $body $status $err); return }
+    try { $parsed = $body | ConvertFrom-Json; $scripts = @($parsed.result | Where-Object { $_ -and $_.id }) } catch { Finish-CfAcct $a @() 'JSON'; return }
+    if (-not $scripts.Count) { Finish-CfAcct $a @() $null; return }
+    $st = @{ acct = $a; scripts = @{}; builds = @(); left = 0; err = $null }
+    foreach ($s in $scripts) { $st.scripts[[string]$s.tag] = $s }
+    $tags = @($st.scripts.Keys)
+    for ($i = 0; $i -lt $tags.Count; $i += 20) {
+        $chunk = @($tags[$i..([math]::Min($i + 19, $tags.Count - 1))])
+        $st.left++
+        Start-Cf $a 'GET' "/accounts/$($a.id)/builds/builds/latest?external_script_ids=$($chunk -join ',')" $null ${function:Receive-CfBuilds} @{ st = $st }
+    }
+}
+function Receive-CfBuilds($body, $status, $err, $ctx) {
+    $st = $ctx.st; $a = $st.acct
+    if ($err -or $status -ne 200) { $st.err = Get-CfErr $body $status $err }
+    else {
+        try {
+            $map = ($body | ConvertFrom-Json).result.builds
+            foreach ($p in @($map.PSObject.Properties)) {
+                $b = $p.Value; $s = $st.scripts[[string]$p.Name]
+                if (-not $b -or -not $s) { continue }
+                $bs = [string]$b.status; $oc = [string]$b.build_outcome
+                $status2 = switch ($bs) { 'queued' { 'queued' } 'stopped' { 'completed' } default { 'in_progress' } }
+                $concl = switch ($oc) { 'success' { 'success' } { $_ -in 'fail', 'terminated' } { 'failure' } 'cancelled' { 'cancelled' } 'skipped' { 'skipped' } default { 'neutral' } }
+                $msg = ([string]$b.build_trigger_metadata.commit_message -split "`n")[0]
+                $st.builds += [pscustomobject]@{
+                    databaseId = "cf-$($b.build_uuid)"; status = $status2; conclusion = $concl; displayTitle = $(if ($msg) { $msg } else { [string]$s.id })
+                    workflowName = [string]$s.id; createdAt = [string]$b.created_on; updatedAt = $(if ($b.stopped_on) { [string]$b.stopped_on } else { [string]$b.modified_on })
+                    url = "https://dash.cloudflare.com/$($a.id)/workers/services/view/$($s.id)/production/builds"; repo = [string]$a.label; source = 'cloudflare'; kind = 'build'; via = ''
+                }
+            }
+        } catch { $st.err = 'JSON' }
+    }
+    $st.left--
+    if ($st.left -gt 0) { return }
+    # A deployment right after a successful build is the build's own, so it gets no row of its own
+    $rows = @($st.builds)
+    $deploys = @()
+    foreach ($s in $st.scripts.Values) {
+        $mod = ToUtc $s.modified_on
+        $own = @($st.builds | Where-Object { $_.workflowName -eq [string]$s.id -and $_.conclusion -eq 'success' -and [math]::Abs(((ToUtc $_.updatedAt) - $mod).TotalMinutes) -lt 3 })
+        if ($own.Count) { continue }
+        $deploys += [pscustomobject]@{
+            databaseId = "cf-dep-$($a.id)-$($s.id)"; status = 'completed'; conclusion = 'success'; displayTitle = [string]$s.id; workflowName = ''
+            createdAt = [string]$s.modified_on; updatedAt = [string]$s.modified_on; url = "https://dash.cloudflare.com/$($a.id)/workers/services/view/$($s.id)/production"
+            repo = [string]$a.label; source = 'cloudflare'; kind = 'deploy'; via = [string]$s.last_deployed_from
+        }
+    }
+    $rows += $deploys
+    # Everything that is running always shows; of the rest only the newest few per account
+    $live = @($rows | Where-Object { (Get-State $_) -in 'running', 'queued' })
+    $rest = @($rows | Where-Object { (Get-State $_) -notin 'running', 'queued' } | Sort-Object { ToUtc $_.updatedAt } -Descending | Select-Object -First ([int]$cfg.cfPerAccount))
+    Finish-CfAcct $a (@($live) + @($rest)) $st.err
+}
+function Refresh-Cf {
+    if ($script:cfFixture) { $script:cfRuns = @($script:cfFixture.runs); Merge-Runs; return }
+    $accts = @(Get-CfAccounts)
+    if (-not $accts.Count) { if ($script:cfRuns.Count) { $script:cfRuns = @(); Merge-Runs }; return }
+    if ($script:cfCycle) { return }
+    $script:cfCycle = @{ pending = $accts.Count; byAcct = @{} }
+    foreach ($a in $accts) { Start-Cf $a 'GET' "/accounts/$($a.id)/workers/scripts" $null ${function:Receive-CfScripts} @{ acct = $a } }
+}
+
+# GitHub runs and Cloudflare builds in one list, newest first. A run that was running and has now finished is announced at the top for a minute.
+function Merge-Runs {
+    $all = @(@($script:ghRuns) + @($script:cfRuns) | Where-Object { $_ } | Sort-Object { ToUtc $_.createdAt } -Descending | Select-Object -First ([int]$cfg.maxRows))
+    foreach ($r in $all) {
+        $id = [string]$r.databaseId; $st = Get-State $r
+        if ($script:prevState.ContainsKey($id) -and $script:prevState[$id] -in 'running', 'queued' -and $st -notin 'running', 'queued') {
+            $el.flash.Text = (T 'finished') -f $r.displayTitle, (T $stateKey[$st])
+            $el.flash.Foreground = Br $colors[$st]; $script:flashColor = $colors[$st]
+            $script:flashUntil = (Get-Date).AddSeconds(60)
+        }
+        $script:prevState[$id] = $st
+    }
+    $script:runs = $all
+    $script:updatedAt = Get-Date
+    Render
+    if ($win.IsLoaded) { Keep-OnScreen }
+}
+
+# Daily usage per account from the GraphQL analytics API. The reference is the Workers Free daily allowance (resets 00:00 UTC);
+# limits from the Cloudflare docs (workers/platform/limits, workers/platform/pricing, workers-ai/platform/pricing), read 2026-11-06.
+$cfLimits = @(
+    @{ k = 'req'; label = 'cfWReq'; limit = 100000.0 }, @{ k = 'd1r'; label = 'cfD1R'; limit = 5000000.0 },
+    @{ k = 'd1w'; label = 'cfD1W'; limit = 100000.0 }, @{ k = 'ai'; label = 'cfAi'; limit = 10000.0 }
+)
+$script:cfUsage = @{}        # account id -> @{ data; at; err; pending }
+$script:usageSrc = $(if ($cfg.usageSrc) { [string]$cfg.usageSrc } else { 'github' })
+function Get-CfUsageAcct {
+    if ($script:usageSrc -eq 'github') { return $null }
+    Get-CfAccounts | Where-Object { [string]$_.id -eq $script:usageSrc } | Select-Object -First 1
+}
+function Get-UsageAt {
+    $a = Get-CfUsageAcct
+    if ($a) { $u = $script:cfUsage[[string]$a.id]; if ($u) { return $u.at } else { return $null } }
+    $script:usage.at
+}
+function Receive-CfUsage($body, $status, $err, $ctx) {
+    $u = $script:cfUsage[$ctx.id]; $u.pending = 0
+    if ($err -or $status -ne 200) { $u.err = Get-CfErr $body $status $err }
+    else {
+        try {
+            $p = $body | ConvertFrom-Json
+            $acc = @($p.data.viewer.accounts)[0]
+            if ($acc) {
+                $sum = { param($list, $f) $t = 0.0; foreach ($x in @($list)) { if ($x -and $x.sum) { $t += [double]$x.sum.$f } }; $t }
+                $u.data = @{ req = (& $sum $acc.w 'requests'); d1r = (& $sum $acc.d 'rowsRead'); d1w = (& $sum $acc.d 'rowsWritten'); ai = (& $sum $acc.ai 'totalNeurons') }
+                $u.at = Get-Date; $u.err = $null
+            } elseif ($p.errors) {
+                $m = [string]@($p.errors)[0].message
+                $u.err = $(if ($m -match 'access|authori|permission') { T 'cfPerm' } else { $m })
+            } else { $u.err = T 'cfNoAccess' }
+        } catch { $u.err = 'JSON' }
+    }
+    Render
+}
+function Refresh-CfUsage {
+    $a = Get-CfUsageAcct
+    if (-not $a) { return }
+    $id = [string]$a.id
+    if ($script:cfFixture) {
+        $f = $script:cfFixture.usage.$id
+        $script:cfUsage[$id] = @{ data = @{ req = [double]$f.req; d1r = [double]$f.d1r; d1w = [double]$f.d1w; ai = [double]$f.ai }; at = Get-Date; err = $null; pending = 0 }
+        Render; return
+    }
+    $old = $script:cfUsage[$id]
+    if ($old -and $old.pending) { return }
+    $script:cfUsage[$id] = @{ data = $(if ($old) { $old.data }); at = $(if ($old) { $old.at }); err = $null; pending = 1 }
+    $now = (Get-Date).ToUniversalTime()
+    $fmt = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+    $q = 'query($a:String!,$s:Time!,$u:Time!){viewer{accounts(filter:{accountTag:$a}){ w:workersInvocationsAdaptive(limit:1000,filter:{datetime_geq:$s,datetime_leq:$u}){sum{requests}} d:d1AnalyticsAdaptiveGroups(limit:1000,filter:{datetime_geq:$s,datetime_leq:$u}){sum{rowsRead rowsWritten}} ai:aiInferenceAdaptiveGroups(limit:1000,filter:{datetime_geq:$s,datetime_leq:$u}){sum{totalNeurons}} }}}'
+    $body = @{ query = $q; variables = @{ a = $id; s = $now.Date.ToString($fmt, $inv); u = $now.ToString($fmt, $inv) } } | ConvertTo-Json -Depth 5 -Compress
+    Start-Cf $a 'POST' '/graphql' $body ${function:Receive-CfUsage} @{ id = $id }
+    Render
+}
 
 # ---------- usage (GitHub billing) ----------
 $script:usage = @{ summary = $null; items = $null; premium = @(); at = $null; err = $null; pending = 0; user = $null }
@@ -312,6 +577,7 @@ function Start-UsageFetch {
     Start-Gh "api `"users/$u/settings/billing/usage?year=$($now.Year)&month=$($now.Month)`"" ${function:Receive-Usage} @{ kind = 'items' }
 }
 function Refresh-Usage {
+    if (Get-CfUsageAcct) { Refresh-CfUsage; return }
     if ($script:usage.pending -gt 0) { return }
     $fx = $env:CISTATUS_USAGE_FIXTURE
     if ($fx -and (Test-Path $fx)) {
@@ -354,9 +620,62 @@ function Get-Budget($key) {
     0.0
 }
 
+# The source switch at the top of the Usage tab: GitHub, then one entry per Cloudflare account (only when there is an account)
+function Render-UsageSrc {
+    $accts = @(Get-CfAccounts)
+    $el.uSrc.Children.Clear()
+    if (-not $accts.Count) { $el.uSrc.Visibility = 'Collapsed'; return }
+    $el.uSrc.Visibility = 'Visible'
+    $cur = Get-CfUsageAcct
+    $items = @(@{ id = 'github'; label = 'GitHub' })
+    foreach ($a in $accts) { $items += @{ id = [string]$a.id; label = [string]$a.label } }
+    foreach ($it in $items) {
+        $tb = New-Object Windows.Controls.TextBlock; $tb.Text = $it.label; $tb.FontSize = 13; $tb.Cursor = 'Hand'; $tb.Background = Br '#00000000'; $tb.Margin = '0,0,14,0'; $tb.Tag = "cmd:src:$($it.id)"
+        $on = if ($cur) { [string]$cur.id -eq $it.id } else { $it.id -eq 'github' }
+        $tb.Foreground = Br $(if ($on) { '#D97757' } else { '#999999' }); if ($on) { $tb.FontWeight = 'SemiBold' }
+        [void]$el.uSrc.Children.Add($tb)
+    }
+}
+function Render-CfUsage($a) {
+    $u = $script:cfUsage[[string]$a.id]
+    $el.uRepos.Children.Clear(); $el.uOther.Children.Clear(); $el.uDaily.Children.Clear(); $el.uDaily.Visibility = 'Collapsed'
+    $el.uNote.Visibility = 'Collapsed'; $el.uReposHead.Text = ''; $el.uReposHead.Visibility = 'Collapsed'
+    if ($u -and $u.err) { $el.uNote.Text = $u.err; $el.uNote.Foreground = Br $colors.fail; $el.uNote.Visibility = 'Visible' }
+    $d = if ($u) { $u.data } else { $null }
+    if (-not $d) { $el.uDailyHead.Text = $(if ($u -and $u.pending) { T 'uCfLoading' } else { '' }); $el.uOtherHead.Text = ''; return }
+    $el.uDailyHead.Text = (T 'uCfHead') -f $a.label
+    $el.uOtherHead.Text = T 'uCfBars'
+    foreach ($m in $cfLimits) {
+        $v = [double]$d[$m.k]; $pct = $v / $m.limit * 100
+        $state = if ($pct -ge 100) { 'fail' } elseif ($pct -ge 80) { 'running' } elseif ($v -gt 0) { 'ok' } else { 'queued' }
+        $sp = New-Object Windows.Controls.StackPanel; $sp.Margin = '0,3,0,3'
+        $g = New-Object Windows.Controls.Grid
+        $cA = New-Object Windows.Controls.ColumnDefinition; $cA.Width = '*'
+        $cB = New-Object Windows.Controls.ColumnDefinition; $cB.Width = 'Auto'
+        [void]$g.ColumnDefinitions.Add($cA); [void]$g.ColumnDefinitions.Add($cB)
+        $nm = New-Object Windows.Controls.StackPanel; $nm.Orientation = 'Horizontal'
+        $dt = New-Object Windows.Shapes.Ellipse; $dt.Width = 8; $dt.Height = 8; $dt.Margin = '0,1,8,0'; $dt.Fill = Br $colors[$state]
+        $nt = New-Object Windows.Controls.TextBlock; $nt.Text = T $m.label; $nt.FontSize = 13; $nt.Foreground = Br '#DDDDDD'
+        [void]$nm.Children.Add($dt); [void]$nm.Children.Add($nt)
+        $vt = New-Object Windows.Controls.TextBlock; $vt.FontSize = 13; $vt.Margin = '10,0,0,0'
+        $vt.Text = '{0} / {1}' -f (Format-Num $v), (Format-Num $m.limit); $vt.Foreground = Br $(if ($v -gt 0) { $colors[$state] } else { '#777777' })
+        [Windows.Controls.Grid]::SetColumn($nm, 0); [Windows.Controls.Grid]::SetColumn($vt, 1)
+        [void]$g.Children.Add($nm); [void]$g.Children.Add($vt); [void]$sp.Children.Add($g)
+        $trk = New-Object Windows.Controls.Grid; $trk.Height = 4; $trk.Margin = '0,3,0,0'; $trk.Background = Br '#333333'; $trk.HorizontalAlignment = 'Stretch'
+        $ub = New-Object Windows.Shapes.Rectangle; $ub.HorizontalAlignment = 'Left'; $ub.RadiusX = 2; $ub.RadiusY = 2; $ub.Fill = Br $colors[$state]
+        $ub.Width = [math]::Max(0, [math]::Min(100, $pct)) / 100 * 368
+        [void]$trk.Children.Add($ub); [void]$sp.Children.Add($trk)
+        [void]$el.uOther.Children.Add($sp)
+    }
+}
+
 function Render-Usage {
     $u = $script:usage
     $ci = Get-Culture2
+    Render-UsageSrc
+    $cfA = Get-CfUsageAcct
+    if ($cfA) { Render-CfUsage $cfA; return }
+    $el.uDaily.Visibility = 'Visible'; $el.uReposHead.Visibility = 'Visible'
     $el.uRepos.Children.Clear(); $el.uOther.Children.Clear(); $el.uDaily.Children.Clear()
     $el.uNote.Visibility = 'Collapsed'
     $month = (Get-Date).ToUniversalTime()
@@ -523,14 +842,18 @@ function Show-Tab($t) {
     $el.tabRuns.Foreground = Br $(if ($t -eq 'runs') { '#D97757' } else { '#999999' }); $el.tabRuns.FontWeight = $(if ($t -eq 'runs') { 'SemiBold' } else { 'Normal' })
     $el.tabUsage.Foreground = Br $(if ($t -eq 'usage') { '#D97757' } else { '#999999' }); $el.tabUsage.FontWeight = $(if ($t -eq 'usage') { 'SemiBold' } else { 'Normal' })
     $el.tabE2E.Foreground = Br $(if ($t -eq 'e2e') { '#D97757' } else { '#999999' }); $el.tabE2E.FontWeight = $(if ($t -eq 'e2e') { 'SemiBold' } else { 'Normal' })
-    if ($t -eq 'usage' -and (-not $script:usage.at -or ((Get-Date) - $script:usage.at).TotalSeconds -gt 60)) { Refresh-Usage }
+    $uat = Get-UsageAt
+    if ($t -eq 'usage' -and (-not $uat -or ((Get-Date) - $uat).TotalSeconds -gt 60)) { Refresh-Usage }
     Render
     if ($win.IsLoaded) { Keep-OnScreen }
 }
 
 function Render {
     $el.title.Text = T 'title'
-    $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.tabE2E.Text = T 'tabE2E'; $el.usageLink.Text = T 'linkUsage'
+    $el.tabRuns.Text = T 'tabRuns'; $el.tabUsage.Text = T 'tabUsage'; $el.tabE2E.Text = T 'tabE2E'
+    $cfLink = if ($cfg.tab -eq 'usage') { Get-CfUsageAcct } else { $null }
+    if ($cfLink) { $el.usageLink.Text = T 'linkUsageCf'; $el.usageLink.Tag = "https://dash.cloudflare.com/$($cfLink.id)/workers-and-pages" }
+    else { $el.usageLink.Text = T 'linkUsage'; $el.usageLink.Tag = 'https://github.com/settings/billing/summary' }
     foreach ($k in 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub') { $el[$k].Text = T $k }
     # The last e2e message stays on the E2E tab for a while
     if ($script:e2eNoteText -and (Get-Date) -lt $script:e2eNoteUntil) { $el.e2eNote.Text = $script:e2eNoteText; $el.e2eNote.Foreground = Br $script:e2eNoteColor; $el.e2eNote.Visibility = 'Visible' } else { $el.e2eNote.Visibility = 'Collapsed' }
@@ -543,7 +866,7 @@ function Render {
     foreach ($r in ($script:runs | Where-Object { $_.status -eq 'completed' } | Sort-Object { ToUtc $_.createdAt } -Descending)) {
         $k = "$($r.repo)|$($r.workflowName)"; if (-not $latest.ContainsKey($k)) { $latest[$k] = Get-State $r }
     }
-    if (-not $gh) { $el.summary.Text = ''; }
+    if (-not (Test-Sources)) { $el.summary.Text = ''; }
     elseif ($running.Count -gt 0) { $el.summary.Text = (T 'running') -f $running.Count; $el.summary.Foreground = Br $colors.running }
     elseif ($latest.Values -contains 'fail') { $el.summary.Text = T 'failing'; $el.summary.Foreground = Br $colors.fail }
     elseif ($script:runs.Count -gt 0) { $el.summary.Text = T 'green'; $el.summary.Foreground = Br $colors.ok }
@@ -566,7 +889,10 @@ function Render {
         $t1.Text = [string]$r.displayTitle; $t1.Foreground = Br '#EEEEEE'; $t1.FontSize = 13; $t1.TextTrimming = 'CharacterEllipsis'; $t1.ToolTip = [string]$r.displayTitle
         $created = ToUtc $r.createdAt
         $parts = @(([string]$r.repo -split '/')[-1], [string]$r.workflowName)
-        if ($st -in 'running', 'queued') {
+        if ($r.kind -eq 'deploy') {
+            # A Cloudflare deployment: the Worker's name is the title, no workflow and no duration
+            $parts = @([string]$r.repo, ((T 'cfDeployed') + $(if ($r.via) { ' ' + ((T 'cfVia') -f $r.via) } else { '' })), (Format-Ago $created))
+        } elseif ($st -in 'running', 'queued') {
             $parts += (T $stateKey[$st]) + ' ' + (Format-Dur ((Get-Date).ToUniversalTime() - $created))
             if ($script:jobInfo.ContainsKey([string]$r.databaseId)) { $parts += ((T 'jobs') -f ($script:jobInfo[[string]$r.databaseId] -split '/')) }
         } else {
@@ -582,11 +908,11 @@ function Render {
     }
 
     $msgs = @()
-    if (-not $gh) { $msgs += T 'noGh' }
-    elseif ($script:cycle -and $script:runs.Count -eq 0 -and $script:errors.Count -eq 0) { $msgs += T 'loading' }
+    if (-not (Test-Sources)) { $msgs += T 'noGh' }
+    elseif (($script:cycle -or $script:cfCycle) -and $script:runs.Count -eq 0 -and $script:errors.Count -eq 0) { $msgs += T 'loading' }
     elseif ($script:runs.Count -eq 0 -and $script:errors.Count -eq 0) { $msgs += T 'noRuns' }
     foreach ($k in $script:errors.Keys) { $msgs += ((T 'ghErr') -f $k, $script:errors[$k]) }
-    if ($msgs.Count) { $el.note.Text = ($msgs -join "`n"); $el.note.Foreground = Br $(if ($script:errors.Count -or -not $gh) { '#E5534B' } else { '#999999' }); $el.note.Visibility = 'Visible' }
+    if ($msgs.Count) { $el.note.Text = ($msgs -join "`n"); $el.note.Foreground = Br $(if ($script:errors.Count -or -not (Test-Sources)) { '#E5534B' } else { '#999999' }); $el.note.Visibility = 'Visible' }
     else { $el.note.Visibility = 'Collapsed' }
 
     if ((Get-Date) -lt $script:flashUntil) { $el.flash.Visibility = 'Visible' } else { $el.flash.Visibility = 'Collapsed' }
@@ -607,39 +933,26 @@ function Render {
     }
     if ((Get-Date) -lt $script:flashUntil) { & $addMini $script:flashColor ([string]$el.flash.Text) }
     if ($el.miniRows.Children.Count -eq 0) {
-        if (-not $gh) { & $addMini $colors.fail (T 'noGh') }
+        if (-not (Test-Sources)) { & $addMini $colors.fail (T 'noGh') }
         elseif ($script:errors.Count) { & $addMini $colors.fail ((T 'ghErr') -f @($script:errors.Keys)[0], '') }
         elseif ($latest.Values -contains 'fail') { & $addMini $colors.fail (T 'failing') }
         elseif ($script:runs.Count -gt 0) { & $addMini $colors.ok (T 'green') }
         else { & $addMini $colors.queued (T 'nothing') }
     }
     $el.mini.ToolTip = T 'restore'; $el.minBtn.ToolTip = T 'minimize'
-    if ($cfg.tab -eq 'usage') { $el.upd.Text = $(if ($script:usage.at) { ((T 'updated') -f $script:usage.at.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T 'uLag') }
+    if ($cfg.tab -eq 'usage') { $uat = Get-UsageAt; $el.upd.Text = $(if ($uat) { ((T 'updated') -f $uat.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T $(if (Get-CfUsageAcct) { 'uCfLag' } else { 'uLag' })) }
     else { $el.upd.Text = $(if ($script:updatedAt) { ((T 'updated') -f $script:updatedAt.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T 'hint') }
     if ($win.IsLoaded) { Keep-OnScreen }   # the content may have grown or shrunk: back to the anchor
 }
 
 function Complete-Cycle {
-    $all = @()
-    foreach ($repo in (Get-Repos)) { $all += @($script:cycle.byRepo[$repo]) }
-    $all = @($all | Where-Object { $_ } | Sort-Object { ToUtc $_.createdAt } -Descending | Select-Object -First ([int]$cfg.maxRows))
-    # A run that was running and has now finished is announced at the top for a minute
-    foreach ($r in $all) {
-        $id = [string]$r.databaseId; $st = Get-State $r
-        if ($script:prevState.ContainsKey($id) -and $script:prevState[$id] -in 'running', 'queued' -and $st -notin 'running', 'queued') {
-            $el.flash.Text = (T 'finished') -f $r.displayTitle, (T $stateKey[$st])
-            $el.flash.Foreground = Br $colors[$st]; $script:flashColor = $colors[$st]
-            $script:flashUntil = (Get-Date).AddSeconds(60)
-        }
-        $script:prevState[$id] = $st
-    }
-    $script:runs = $all
-    $script:updatedAt = Get-Date
+    $gAll = @()
+    foreach ($repo in (Get-Repos)) { $gAll += @($script:cycle.byRepo[$repo]) }
+    $script:ghRuns = @($gAll | Where-Object { $_ })
     $script:cycle = $null
-    Render
-    if ($win.IsLoaded) { Keep-OnScreen }
-    # For runs in progress, read the jobs so the row can show how far it has come
-    foreach ($r in ($all | Where-Object { (Get-State $_) -eq 'running' } | Select-Object -First 3)) {
+    Merge-Runs
+    # For GitHub runs in progress, read the jobs so the row can show how far it has come
+    foreach ($r in ($script:runs | Where-Object { (Get-State $_) -eq 'running' -and $_.source -ne 'cloudflare' } | Select-Object -First 3)) {
         Start-Gh "run view $($r.databaseId) --repo $($r.repo) --json jobs" {
             param($out, $err, $code, $ctx)
             if ($code -ne 0) { return }
@@ -672,11 +985,12 @@ function Receive-RunList($out, $err, $code, $ctx) {
 
 function Refresh {
     $script:since = 0
+    Refresh-Cf
     if ($script:cycle) { return }
     $repos = @(Get-Repos)
     $fixture = $env:CISTATUS_FIXTURE
     if ($fixture -and (Test-Path $fixture)) {
-        $parsed = Get-Content $fixture -Raw -Encoding UTF8 | ConvertFrom-Json; $script:runs = @($parsed); $script:updatedAt = Get-Date; Render; return
+        $parsed = Get-Content $fixture -Raw -Encoding UTF8 | ConvertFrom-Json; $script:ghRuns = @($parsed); Merge-Runs; return
     }
     if (-not $gh -or $repos.Count -eq 0) { Render; return }
     $script:cycle = @{ pending = $repos.Count; byRepo = @{} }
@@ -841,11 +1155,79 @@ $removeMenu.Add_SubmenuOpened({
     $removeMenu.Items.Clear()
     foreach ($repo in (Get-Repos)) {
         $mi = New-Object Windows.Controls.MenuItem; $mi.Header = $repo; $mi.Tag = $repo
-        $mi.Add_Click({ $r = $this.Tag; $cfg.repos = @((Get-Repos) | Where-Object { $_ -ne $r }); Save-Config; $script:runs = @($script:runs | Where-Object { $_.repo -ne $r }); $script:errors.Remove($r); Render; Refresh })
+        $mi.Add_Click({ $r = $this.Tag; $cfg.repos = @((Get-Repos) | Where-Object { $_ -ne $r }); Save-Config; $script:ghRuns = @($script:ghRuns | Where-Object { $_.repo -ne $r }); $script:runs = @($script:runs | Where-Object { $_.repo -ne $r }); $script:errors.Remove($r); Render; Refresh })
         [void]$removeMenu.Items.Add($mi)
     }
 })
 [void]$removeMenu.Items.Add((New-Object Windows.Controls.MenuItem))
+# Cloudflare accounts: add one (name + read-only API token, typed into a password box) or remove one
+function Show-CfAddDialog {
+    [xml]$dx = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        SizeToContent="Height" Width="400" Background="#1E1E1E" ShowInTaskbar="False" Topmost="True">
+  <StackPanel Margin="16">
+    <TextBlock Name="lbl" Foreground="#EEEEEE" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,4"/>
+    <TextBox Name="name" FontSize="13" Margin="0,0,0,10" MaxLength="40"/>
+    <TextBlock Name="tlbl" Foreground="#EEEEEE" FontSize="13" Margin="0,0,0,4"/>
+    <PasswordBox Name="tok" FontSize="13" Margin="0,0,0,8"/>
+    <TextBlock Name="help" Foreground="#999999" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,14"/>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Name="ok" IsDefault="True" Padding="16,4" Margin="0,0,8,0"/>
+      <Button Name="cancel" IsCancel="True" Padding="16,4"/>
+    </StackPanel>
+  </StackPanel>
+</Window>
+'@
+    $dlg = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $dx))
+    $dlg.Title = T 'mCfAdd'
+    $dlg.FindName('lbl').Text = T 'cfAskLabel'; $dlg.FindName('tlbl').Text = T 'cfAskToken'; $dlg.FindName('help').Text = T 'cfTokenHelp'
+    $dlg.FindName('ok').Content = T 'cfAdd'; $dlg.FindName('cancel').Content = T 'cfCancel'
+    $dlg.FindName('ok').Add_Click({ $dlg.DialogResult = $true })
+    $dlg.Add_ContentRendered({ $dlg.FindName('name').Focus() | Out-Null })
+    if ($dlg.ShowDialog() -ne $true) { return $null }
+    @{ label = $dlg.FindName('name').Text; token = $dlg.FindName('tok').Password }
+}
+function Add-CfAccount {
+    $r = Show-CfAddDialog
+    if (-not $r) { return }
+    $label = ([string]$r.label).Trim(); $plain = ([string]$r.token).Trim()
+    if (-not $label -or -not $plain) { return }
+    try { $enc = Protect-Token $plain } catch { [void][Windows.MessageBox]::Show(((T 'cfAddFail') -f $_.Exception.Message), (T 'title')); return }
+    $plain = $null; $r.token = $null
+    # The token is tested by listing the accounts it can see; a token can see more than one
+    Start-Cf @{ id = ''; label = $label; token = $enc } 'GET' '/accounts' $null {
+        param($body, $status, $err, $ctx)
+        if ($err -or $status -ne 200) { [void][Windows.MessageBox]::Show(((T 'cfAddFail') -f (Get-CfErr $body $status $err)), (T 'title')); return }
+        try { $found = @(($body | ConvertFrom-Json).result | Where-Object { $_ -and $_.id }) } catch { $found = @() }
+        if (-not $found.Count) { [void][Windows.MessageBox]::Show(((T 'cfAddFail') -f (T 'cfNoAccess')), (T 'title')); return }
+        $keep = @(Get-CfAccounts | Where-Object { $id = [string]$_.id; -not ($found | Where-Object { [string]$_.id -eq $id }) })
+        $new = foreach ($f in $found) { [pscustomobject]@{ id = [string]$f.id; label = $(if ($found.Count -gt 1) { "$($ctx.label) ($($f.name))" } else { $ctx.label }); token = $ctx.enc } }
+        foreach ($f in $found) { $script:cfClients.Remove([string]$f.id) }
+        $cfg.cfAccounts = @($keep) + @($new); Save-Config
+        [void][Windows.MessageBox]::Show(((T 'cfAdded') -f ((@($new) | ForEach-Object { $_.label }) -join ', ')), (T 'title'))
+        Refresh
+    } @{ label = $label; enc = $enc }
+}
+$cfMenu = AddItem 'mCf' {}
+AddItem 'mCfAdd' { Add-CfAccount } $cfMenu | Out-Null
+$cfRemoveMenu = AddItem 'mCfRemove' {} $cfMenu
+$cfRemoveMenu.Add_SubmenuOpened({
+    $cfRemoveMenu.Items.Clear()
+    foreach ($a in (Get-CfAccounts)) {
+        $mi = New-Object Windows.Controls.MenuItem; $mi.Header = [string]$a.label; $mi.Tag = [string]$a.id
+        $mi.Add_Click({
+            $id = $this.Tag
+            $cfg.cfAccounts = @(Get-CfAccounts | Where-Object { [string]$_.id -ne $id }); Save-Config
+            $script:cfClients.Remove($id); $script:cfUsage.Remove($id)
+            if ($script:usageSrc -eq $id) { $script:usageSrc = 'github'; $cfg.usageSrc = 'github'; Save-Config }
+            foreach ($k in @($script:errors.Keys | Where-Object { $_ -like 'Cloudflare/*' })) { $script:errors.Remove($k) }
+            $script:cfRuns = @($script:cfRuns | Where-Object { $_.url -notlike "*dash.cloudflare.com/$id/*" })
+            Merge-Runs; Refresh
+        })
+        [void]$cfRemoveMenu.Items.Add($mi)
+    }
+})
+[void]$cfRemoveMenu.Items.Add((New-Object Windows.Controls.MenuItem))
 AddItem 'mUpdate' { Start-Update } | Out-Null
 $top = AddItem 'mTopmost' { $win.Topmost = -not $win.Topmost; $this.IsChecked = $win.Topmost; $cfg.topmost = $win.Topmost; Save-Config }
 $top.IsChecked = $win.Topmost
@@ -885,6 +1267,7 @@ $win.Add_MouseLeftButtonDown({
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
         elseif ($act -eq 'cmd:e2e:ask') { Open-E2EPicker }
         elseif ($act -like 'cmd:e2e:*') { Start-E2E ($act -replace '^cmd:e2e:', '') }
+        elseif ($act -like 'cmd:src:*') { $script:usageSrc = $act -replace '^cmd:src:', ''; $cfg.usageSrc = $script:usageSrc; Save-Config; if (-not (Get-UsageAt)) { Refresh-Usage }; Render }
         elseif ($act -like 'cmd:svc:*') { $script:usageSel = $act -replace '^cmd:svc:', ''; $cfg.usageSel = $script:usageSel; Save-Config; Render }
         elseif ($act) { Start-Process $act }
     } elseif ($cfg.minimized) { $cfg.miniLeft = $win.Left; $cfg.miniTop = $win.Top; Save-Config }
@@ -897,6 +1280,7 @@ $timer = New-Object Windows.Threading.DispatcherTimer
 $timer.Interval = [TimeSpan]::FromSeconds(1)
 $timer.Add_Tick({
     Receive-Jobs
+    Receive-CfJobs
     Receive-UpdateCheck
     # Every six hours; every ten minutes while the notice is showing, because GitHub's raw files are cached for a few minutes
     # and a freshly pushed version can look "new" to a widget that already has it
@@ -905,7 +1289,8 @@ $timer.Add_Tick({
     $script:tick++; $script:since++
     $busy = @($script:runs | Where-Object { (Get-State $_) -in 'running', 'queued' }).Count -gt 0
     $every = if ($busy) { 10 } else { 30 }
-    if ($cfg.tab -eq 'usage' -and -not $cfg.minimized -and $script:usage.at -and ((Get-Date) - $script:usage.at).TotalSeconds -gt 300) { Refresh-Usage }
+    $uat = Get-UsageAt
+    if ($cfg.tab -eq 'usage' -and -not $cfg.minimized -and $uat -and ((Get-Date) - $uat).TotalSeconds -gt 300) { Refresh-Usage }
     if ($script:since -ge $every -and -not $script:cycle) { Refresh }
     elseif ($script:runs.Count -gt 0 -and ($script:tick % 5 -eq 0 -or ($cfg.minimized -and $busy))) { Render }
 })
