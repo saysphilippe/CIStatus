@@ -20,6 +20,14 @@ if ($cfg.repoAcct -and $cfg.repoAcct -isnot [System.Collections.IDictionary]) { 
 $cfg.repoAcct = $ra
 function Save-Config { $cfg | ConvertTo-Json -Depth 5 | Set-Content $cfgPath -Encoding UTF8 }
 function Get-Repos { @($cfg.repos | Where-Object { $_ }) }
+# Hidden sub-tabs (chip rows): keys like 'flt:gh:name', 'src:cf:id', 'e2erepo:owner/name'. Kept in the config until they are shown again.
+function Get-Hidden { @($cfg.hiddenSubs | Where-Object { $_ } | ForEach-Object { [string]$_ }) }
+function Test-Hidden($key) { (Get-Hidden) -contains [string]$key }
+function Set-Hidden($key, $hide) {
+    $h = @(Get-Hidden | Where-Object { $_ -ne [string]$key })
+    if ($hide) { $h += [string]$key }
+    $cfg.hiddenSubs = $h; Save-Config
+}
 # Something to read from: the GitHub CLI or at least one Cloudflare account
 function Test-Sources { [bool]$gh -or (@(Get-CfAccounts).Count -gt 0) }
 
@@ -147,6 +155,8 @@ $strings = @{
         e2eSome = 'Choose tests…'; e2eSomeSub = 'Tick the tests you want to run'
         e2ePick = 'Tick the tests to run'; e2eSelAll = 'Select all'; e2eSelNone = 'Select none'; e2eRunN = 'Run {0} tests'; e2eCancel = 'Cancel'; e2eLoadingList = 'Reading the test list…'; e2eListFail = 'Could not read the test list: {0}'
         e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
+        e2eRuns = 'Runs'; e2eNoRuns = 'No e2e runs yet'; e2eChoice = 'Tests: {0}'; e2ePlanning = 'Choosing tests…'; e2eTests = '{0}/{1} tests'; e2eFailedN = '{0} failed'; e2ePart = 'Part {0}'; e2eWaitPart = 'waiting'; e2eRunsErr = 'Could not read e2e runs: {0}'
+        mSubs = 'Sub-tabs'; mSubHide = 'Hide “{0}”'; mSubShow = 'Show “{0}”'; mSubsAll = 'Show all hidden'; subsHidden = 'Hidden sub-tabs ({0}). Click to show them all.'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh is not signed in as {0}. Choose GitHub accounts, Sign in another account.'
         mGh = 'GitHub accounts'; mGhAdd = 'Sign in another account…'; mGhRefresh = 'Refresh accounts'; mGhName = 'Rename account'
@@ -188,6 +198,8 @@ $strings = @{
         e2eSome = 'Velg tester…'; e2eSomeSub = 'Kryss av testene du vil kjøre'
         e2ePick = 'Kryss av testene som skal kjøres'; e2eSelAll = 'Velg alle'; e2eSelNone = 'Fjern alle'; e2eRunN = 'Kjør {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Leser testlisten…'; e2eListFail = 'Kunne ikke lese testlisten: {0}'
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
+        e2eRuns = 'Kjøringer'; e2eNoRuns = 'Ingen e2e-kjøringer ennå'; e2eChoice = 'Tester: {0}'; e2ePlanning = 'Velger tester…'; e2eTests = '{0}/{1} tester'; e2eFailedN = '{0} feilet'; e2ePart = 'Del {0}'; e2eWaitPart = 'venter'; e2eRunsErr = 'Kunne ikke lese e2e-kjøringer: {0}'
+        mSubs = 'Underfaner'; mSubHide = 'Skjul «{0}»'; mSubShow = 'Vis «{0}»'; mSubsAll = 'Vis alle skjulte'; subsHidden = 'Skjulte underfaner ({0}). Klikk for å vise dem alle.'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh er ikke innlogget som {0}. Velg GitHub-kontoer, Logg inn en annen konto.'
         mGh = 'GitHub-kontoer'; mGhAdd = 'Logg inn en annen konto…'; mGhRefresh = 'Oppdater kontoer'; mGhName = 'Gi konto nytt navn'
@@ -229,6 +241,8 @@ $strings = @{
         e2eSome = 'Välj tester…'; e2eSomeSub = 'Kryssa i testerna du vill köra'
         e2ePick = 'Kryssa i testerna som ska köras'; e2eSelAll = 'Markera alla'; e2eSelNone = 'Avmarkera alla'; e2eRunN = 'Kör {0} tester'; e2eCancel = 'Avbryt'; e2eLoadingList = 'Läser testlistan…'; e2eListFail = 'Kunde inte läsa testlistan: {0}'
         e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
+        e2eRuns = 'Körningar'; e2eNoRuns = 'Inga e2e-körningar ännu'; e2eChoice = 'Tester: {0}'; e2ePlanning = 'Väljer tester…'; e2eTests = '{0}/{1} tester'; e2eFailedN = '{0} misslyckades'; e2ePart = 'Del {0}'; e2eWaitPart = 'väntar'; e2eRunsErr = 'Kunde inte läsa e2e-körningar: {0}'
+        mSubs = 'Underflikar'; mSubHide = 'Dölj “{0}”'; mSubShow = 'Visa “{0}”'; mSubsAll = 'Visa alla dolda'; subsHidden = 'Dolda underflikar ({0}). Klicka för att visa alla.'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh är inte inloggad som {0}. Välj GitHub-konton, Logga in ett annat konto.'
         mGh = 'GitHub-konton'; mGhAdd = 'Logga in ett annat konto…'; mGhRefresh = 'Uppdatera konton'; mGhName = 'Byt namn på konto'
@@ -270,6 +284,8 @@ $strings = @{
         e2eSome = 'Vælg tests…'; e2eSomeSub = 'Afkryds de tests du vil køre'
         e2ePick = 'Afkryds de tests der skal køre'; e2eSelAll = 'Vælg alle'; e2eSelNone = 'Fravælg alle'; e2eRunN = 'Kør {0} tests'; e2eCancel = 'Annuller'; e2eLoadingList = 'Læser testlisten…'; e2eListFail = 'Kunne ikke læse testlisten: {0}'
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
+        e2eRuns = 'Kørsler'; e2eNoRuns = 'Ingen e2e-kørsler endnu'; e2eChoice = 'Tests: {0}'; e2ePlanning = 'Vælger tests…'; e2eTests = '{0}/{1} tests'; e2eFailedN = '{0} fejlede'; e2ePart = 'Del {0}'; e2eWaitPart = 'venter'; e2eRunsErr = 'Kunne ikke læse e2e-kørsler: {0}'
+        mSubs = 'Underfaner'; mSubHide = 'Skjul “{0}”'; mSubShow = 'Vis “{0}”'; mSubsAll = 'Vis alle skjulte'; subsHidden = 'Skjulte underfaner ({0}). Klik for at vise dem alle.'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh er ikke logget ind som {0}. Vælg GitHub-konti, Log ind på en anden konto.'
         mGh = 'GitHub-konti'; mGhAdd = 'Log ind på en anden konto…'; mGhRefresh = 'Opdater konti'; mGhName = 'Omdøb konto'
@@ -390,11 +406,14 @@ function Format-Dur($ts) {
         <TextBlock Name="summary" DockPanel.Dock="Right" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
         <TextBlock Name="title" Foreground="#D97757" FontWeight="SemiBold" FontSize="16"/>
       </DockPanel>
-      <StackPanel Name="tabBar" Orientation="Horizontal" Margin="0,0,0,8">
+      <DockPanel Margin="0,0,0,8">
+      <TextBlock Name="tabMore" DockPanel.Dock="Right" FontSize="12" FontWeight="SemiBold" Foreground="#E0B050" Cursor="Hand" Background="Transparent" Tag="cmd:subs:all" Visibility="Collapsed" VerticalAlignment="Center"/>
+      <StackPanel Name="tabBar" Orientation="Horizontal">
         <TextBlock Name="tabRuns" FontSize="13" Cursor="Hand" Background="Transparent" Margin="0,0,14,0" Tag="cmd:tab:runs"/>
         <TextBlock Name="tabUsage" FontSize="13" Cursor="Hand" Background="Transparent" Margin="0,0,14,0" Tag="cmd:tab:usage"/>
         <TextBlock Name="tabE2E" FontSize="13" Cursor="Hand" Background="Transparent" Margin="0,0,14,0" Tag="cmd:tab:e2e"/>
       </StackPanel>
+      </DockPanel>
       <StackPanel Name="runsPanel">
       <WrapPanel Name="runFilter" Margin="0,0,0,8" Visibility="Collapsed"/>
       <TextBlock Name="flash" Foreground="#EEE" FontSize="12" Margin="0,0,0,6" TextWrapping="Wrap" Visibility="Collapsed"/>
@@ -414,6 +433,7 @@ function Format-Dur($ts) {
           <StackPanel><TextBlock Name="e2eSome" Foreground="#EEEEEE" FontSize="13" FontWeight="SemiBold"/><TextBlock Name="e2eSomeSub" Foreground="#999999" FontSize="12" TextWrapping="Wrap"/></StackPanel>
         </Border>
         <TextBlock Name="e2eNote" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <StackPanel Name="e2eRunsList" Margin="0,6,0,0"/>
       </StackPanel>
       <StackPanel Name="usagePanel" Visibility="Collapsed">
         <WrapPanel Name="uSrc" Margin="0,0,0,8" Visibility="Collapsed"/>
@@ -435,7 +455,7 @@ function Format-Dur($ts) {
 '@
 $win = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
 $el = @{}
-'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabBar', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eRepos', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
+'root', 'mini', 'miniRows', 'minBtn', 'summary', 'title', 'flash', 'rows', 'note', 'upd', 'tabBar', 'tabMore', 'tabRuns', 'tabUsage', 'tabE2E', 'e2ePanel', 'e2eRunsList', 'e2eRepos', 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub', 'e2eNote', 'usageLink', 'updNew', 'runsPanel', 'usagePanel', 'uDailyHead', 'uDaily', 'uReposHead', 'uRepos', 'uOtherHead', 'uOther', 'uNote', 'uSrc', 'runFilter' | ForEach-Object { $el[$_] = $win.FindName($_) }
 $win.Left = $cfg.left; $win.Top = $cfg.top; $win.Topmost = [bool]$cfg.topmost
 
 # ---------- data and rendering ----------
@@ -608,7 +628,7 @@ $script:runFilter = [string]$cfg.runFilter; if (-not $script:runFilter) { $scrip
 $script:sum = @{ running = 0; runKeys = @(); failKeys = @(); any = $false }
 $script:failIds = @{}
 function Merge-Runs {
-    $script:cand = @(@($script:ghRuns) + @($script:cfRuns) | Where-Object { $_ })
+    $script:cand = @(@($script:ghRuns) + @($script:cfRuns) | Where-Object { $_ } | Where-Object { -not (Test-Hidden ('flt:' + (Get-RowKey $_))) })
     $multi = Test-Multi
     # A run that was running and has now finished is announced at the top for a minute
     foreach ($r in $script:cand) {
@@ -640,7 +660,7 @@ function Select-Visible {
     $max = [int]$cfg.maxRows
     $all = @($script:cand)
     $flt = $script:runFilter
-    if ($flt -ne 'all' -and -not (Get-Acct $flt)) { $flt = 'all' }
+    if ($flt -ne 'all' -and (-not (Get-Acct $flt) -or (Test-Hidden "flt:$flt"))) { $flt = 'all' }
     if ($flt -ne 'all') { $all = @($all | Where-Object { (Get-RowKey $_) -eq $flt }) }
     $sorted = @($all | Sort-Object { ToUtc $_.createdAt } -Descending)
     $script:pickList = New-Object System.Collections.ArrayList; $script:pickSeen = @{}
@@ -817,7 +837,7 @@ function Get-Budget($key) {
 
 # The source switch at the top of the Usage tab: GitHub, then one entry per Cloudflare account (only when there is an account)
 function Render-UsageSrc {
-    $accts = @(Get-Accounts)
+    $accts = @(Get-Accounts | Where-Object { -not (Test-Hidden "src:$($_.key)") })
     $el.uSrc.Children.Clear()
     if ($accts.Count -lt 2) { $el.uSrc.Visibility = 'Collapsed'; return }
     $el.uSrc.Visibility = 'Visible'
@@ -1035,6 +1055,7 @@ function Show-Tab($t) {
     $el.runsPanel.Visibility = $(if ($t -eq 'runs') { 'Visible' } else { 'Collapsed' })
     $el.usagePanel.Visibility = $(if ($t -eq 'usage') { 'Visible' } else { 'Collapsed' })
     $el.e2ePanel.Visibility = $(if ($t -eq 'e2e') { 'Visible' } else { 'Collapsed' })
+    if ($t -eq 'e2e' -and ((Get-Date) - $script:e2eAt).TotalSeconds -gt 8) { Refresh-E2E }
     $el.tabRuns.Foreground = Br $(if ($t -eq 'runs') { '#D97757' } else { '#999999' }); $el.tabRuns.FontWeight = $(if ($t -eq 'runs') { 'SemiBold' } else { 'Normal' })
     $el.tabUsage.Foreground = Br $(if ($t -eq 'usage') { '#D97757' } else { '#999999' }); $el.tabUsage.FontWeight = $(if ($t -eq 'usage') { 'SemiBold' } else { 'Normal' })
     $el.tabE2E.Foreground = Br $(if ($t -eq 'e2e') { '#D97757' } else { '#999999' }); $el.tabE2E.FontWeight = $(if ($t -eq 'e2e') { 'SemiBold' } else { 'Normal' })
@@ -1050,9 +1071,9 @@ function Render-RunFilter {
     $el.runFilter.Children.Clear()
     if ($accts.Count -lt 2) { $el.runFilter.Visibility = 'Collapsed'; return }
     $el.runFilter.Visibility = 'Visible'
-    $cur = $script:runFilter; if ($cur -ne 'all' -and -not (Get-Acct $cur)) { $cur = 'all' }
+    $cur = $script:runFilter; if ($cur -ne 'all' -and (-not (Get-Acct $cur) -or (Test-Hidden "flt:$cur"))) { $cur = 'all' }
     $items = @([pscustomobject]@{ key = 'all'; text = T 'fltAll'; c = @('#3A3A3A', '#EEEEEE') })
-    foreach ($a in $accts) { $items += [pscustomobject]@{ key = $a.key; text = "$($a.src) · $(Short $a.label 14)"; c = (Get-AcctColor $a.key) } }
+    foreach ($a in $accts) { if (Test-Hidden "flt:$($a.key)") { continue }; $items += [pscustomobject]@{ key = $a.key; text = "$($a.src) · $(Short $a.label 14)"; c = (Get-AcctColor $a.key) } }
     foreach ($it in $items) {
         $on = ($it.key -eq $cur)
         $bd = New-Object Windows.Controls.Border; $bd.CornerRadius = 4; $bd.Padding = '7,2,7,2'; $bd.Margin = '0,0,6,4'; $bd.Cursor = 'Hand'; $bd.Tag = "cmd:flt:$($it.key)"
@@ -1076,6 +1097,7 @@ function Render {
     if ($cfLink) { $el.usageLink.Text = T 'linkUsageCf'; $el.usageLink.Tag = "https://dash.cloudflare.com/$($cfLink.id)/workers-and-pages" }
     else { $el.usageLink.Text = T 'linkUsage'; $el.usageLink.Tag = 'https://github.com/settings/billing/summary' }
     Render-E2ERepos
+    Render-E2ERuns; Update-HiddenMark
     foreach ($k in 'e2eHelp', 'e2eRel', 'e2eRelSub', 'e2eAll', 'e2eAllSub', 'e2eSome', 'e2eSomeSub') { $el[$k].Text = T $k }
     # The last e2e message stays on the E2E tab for a while
     if ($script:e2eNoteText -and (Get-Date) -lt $script:e2eNoteUntil) { $el.e2eNote.Text = $script:e2eNoteText; $el.e2eNote.Foreground = Br $script:e2eNoteColor; $el.e2eNote.Visibility = 'Visible' } else { $el.e2eNote.Visibility = 'Collapsed' }
@@ -1132,6 +1154,7 @@ function Render {
             [void]$dp.Children.Add($bdg); [void]$dp.Children.Add($t2)
             [void]$sp.Children.Add($t1); [void]$sp.Children.Add($dp)
         } else { [void]$sp.Children.Add($t1); [void]$sp.Children.Add($t2) }
+        if (Test-E2ERun $r) { $dt = New-E2EDetail ([string]$r.databaseId) $st; if ($dt) { [void]$sp.Children.Add($dt) } }
         [void]$g.Children.Add($dot); [void]$g.Children.Add($sp)
         $row.Child = $g
         [void]$el.rows.Children.Add($row)
@@ -1160,6 +1183,7 @@ function Render {
         if ($multi) { $name = (Short (Get-AcctLabel (Get-RowKey $r)) 10) + ' · ' + $name }
         $info = Format-Dur ((Get-Date).ToUniversalTime() - (ToUtc $r.createdAt))
         if ($script:jobInfo.ContainsKey([string]$r.databaseId)) { $info += ' · ' + ((T 'jobs') -f ($script:jobInfo[[string]$r.databaseId] -split '/')) }
+        $pt = Get-E2EProgressText $r.databaseId; if ($pt) { $info += ' · ' + $pt }
         & $addMini $colors[(Get-State $r)] "$name  $info"
     }
     if ((Get-Date) -lt $script:flashUntil) { & $addMini $script:flashColor ([string]$el.flash.Text) }
@@ -1182,6 +1206,7 @@ function Complete-Cycle {
     $script:ghRuns = @($gAll | Where-Object { $_ })
     $script:cycle = $null
     Merge-Runs
+    if ((Test-E2EActive) -or $cfg.tab -eq 'e2e') { Refresh-E2E }   # what is running in the e2e tests: read the jobs and their logs while it runs
     # For GitHub runs in progress, read the jobs so the row can show how far it has come
     foreach ($r in ($script:runs | Where-Object { (Get-State $_) -eq 'running' -and $_.source -ne 'cloudflare' } | Select-Object -First 3)) {
         Start-Gh "run view $($r.databaseId) --repo $($r.repo) --json jobs" {
@@ -1277,12 +1302,14 @@ function Set-E2ENote($text, $color) {
 # $tests: 'relevante', 'alle' or parts of test names (scripts/e2e-relevant.mjs in the repo decides what runs)
 # The E2E tests run in one watched repository at a time, and the repository is read with the GitHub account it belongs to.
 function Get-E2ERepo {
+    $vis = @(Get-Repos | Where-Object { -not (Test-Hidden "e2erepo:$_") })
+    if (-not $vis.Count) { $vis = @(Get-Repos) }
     $r = [string]$cfg.e2eRepo
-    if ($r -and (Get-Repos) -contains $r) { return $r }
-    [string]@(Get-Repos)[0]
+    if ($r -and $vis -contains $r) { return $r }
+    [string]$vis[0]
 }
 function Render-E2ERepos {
-    $repos = @(Get-Repos)
+    $repos = @(Get-Repos | Where-Object { -not (Test-Hidden "e2erepo:$_") })
     $el.e2eRepos.Children.Clear()
     if ($repos.Count -lt 2) { $el.e2eRepos.Visibility = 'Collapsed'; return }
     $el.e2eRepos.Visibility = 'Visible'
@@ -1310,7 +1337,7 @@ function Start-E2E($tests) {
     Set-E2ENote ((T 'e2eStarting') -f $tests) $colors.running
     Start-Gh "workflow run e2e.yml --repo $repo -f `"tests=$tests`"" {
         param($out, $err, $code, $ctx)
-        if ($code -eq 0) { Set-E2ENote (((T 'e2eStarted') -f $ctx.tests) + ' · ' + (([string]$ctx.repo -split '/')[-1])) $colors.ok; $script:since = 24 }
+        if ($code -eq 0) { Set-E2ENote (((T 'e2eStarted') -f $ctx.tests) + ' · ' + (([string]$ctx.repo -split '/')[-1])) $colors.ok; $script:since = 24; Refresh-E2E }
         else { $m = ([string]$err).Trim(); if ($m.Length -gt 120) { $m = $m.Substring(0, 120) }; Set-E2ENote ((T 'e2eFail') -f $m) $colors.fail }
     } @{ tests = $tests; repo = $repo } (Get-RepoLogin $repo)
 }
@@ -1382,12 +1409,278 @@ function Open-E2EPicker {
     } @{ repo = $repo } (Get-RepoLogin $repo)
 }
 
+# ---------- e2e progress: which tests are running ----------
+# GitHub does not serve the log of a job that is still running, so the test reporter in the repo (tests/helpers/ci-progress-reporter.mjs) keeps a check
+# run up to date on the commit while the tests run: "e2e-live <run id> <part>", with JSON in output.text: { total, done, failed, running: [...] }.
+# The widget reads those check runs. The plan job leaves a notice annotation titled "e2e-valg" with the choice (relevante, alle or the files).
+# A run that is finished is read once and then kept.
+$script:e2eRuns = @(); $script:e2eInfo = @{}; $script:e2eErr = ''; $script:e2eAt = [datetime]::MinValue
+function Test-E2ERun($r) { [string]$r.workflowName -like 'E2E*' }
+function Test-E2EActive {
+    if (@($script:e2eRuns | Where-Object { $_.status -ne 'completed' }).Count) { return $true }
+    [bool](@($script:runs | Where-Object { (Test-E2ERun $_) -and (Get-State $_) -in 'running', 'queued' }).Count)
+}
+function Read-E2ELive($text) {
+    $j = [string]$text | ConvertFrom-Json
+    @{ total = [int]$j.total; done = [int]$j.done; failed = [int]$j.failed; running = @($j.running | Where-Object { $_ }) }
+}
+# "skjerm-1280 | kunde.spec.mjs | title" -> "kunde · title (1280)"
+function Format-E2ETest($label) {
+    $p = @(([string]$label) -split ' \| ', 3)
+    if ($p.Count -lt 3) { return [string]$label }
+    $proj = ([string]$p[0] -split '-')[-1]
+    (([string]$p[1]) -replace '\.spec\.mjs$', '') + ' · ' + $p[2] + ' (' + $proj + ')'
+}
+# The part number of a job: "e2e (2)" -> '2'
+function Get-E2EPartNo($jobName) { if (([string]$jobName) -match '\((\d+)\)') { $Matches[1] } else { '1' } }
+function Update-E2ERun($run, $repo) {
+    $id = [string]$run.databaseId
+    if (-not $script:e2eInfo.ContainsKey($id)) { $script:e2eInfo[$id] = @{ choice = ''; choiceTried = $false; jobs = @(); prog = @{}; fin = $false; busy = $false; liveBusy = $false } }
+    $info = $script:e2eInfo[$id]
+    if ($info.fin -or $info.busy) { return }
+    $info.busy = $true
+    Start-Gh "run view $id --repo $repo --json jobs" {
+        param($out, $err, $code, $ctx)
+        $info = $script:e2eInfo[$ctx.id]; $info.busy = $false
+        if ($code -ne 0) { return }
+        try {
+            $jobs = @(($out | ConvertFrom-Json).jobs)
+            $info.jobs = @($jobs | ForEach-Object { @{ id = [string]$_.databaseId; name = [string]$_.name; status = [string]$_.status; conclusion = [string]$_.conclusion } })
+            $plan = @($info.jobs | Where-Object { $_.name -eq 'plan' })[0]
+            if ($plan -and $plan.status -eq 'completed' -and -not $info.choice -and -not $info.choiceTried) {
+                $info.choiceTried = $true
+                Start-Gh "api repos/$($ctx.repo)/check-runs/$($plan.id)/annotations" {
+                    param($o2, $e2, $c2, $x2)
+                    $i2 = $script:e2eInfo[$x2.id]
+                    if ($c2 -ne 0) { $i2.choiceTried = $false; return }
+                    try {
+                        $ann = $o2 | ConvertFrom-Json   # PowerShell 5.1 hands a JSON array on as one object: assign before wrapping
+                        $ann = @($ann)
+                        $hit = @($ann | Where-Object { [string]$_.title -eq 'e2e-valg' })[0]
+                        if ($hit) { $i2.choice = ([string]$hit.message).Trim().Trim('"') }
+                    } catch {}
+                    Render
+                } @{ id = $ctx.id } (Get-RepoLogin $ctx.repo)
+            }
+            # The live check runs of this run: one per part, written by the reporter while the tests run
+            if ($ctx.sha -and @($info.jobs | Where-Object { $_.name -like 'e2e*' }).Count -and -not $info.liveBusy) {
+                $info.liveBusy = $true
+                Start-Gh "api repos/$($ctx.repo)/commits/$($ctx.sha)/check-runs?per_page=100" {
+                    param($o3, $e3, $c3, $x3)
+                    $i3 = $script:e2eInfo[$x3.id]; $i3.liveBusy = $false
+                    if ($c3 -ne 0) { return }
+                    try {
+                        $cr = $o3 | ConvertFrom-Json
+                        foreach ($c in @($cr.check_runs)) {
+                            $nm = [string]$c.name
+                            if ($nm -notlike "e2e-live $($x3.id) *") { continue }
+                            $pr = Read-E2ELive $c.output.text
+                            $pr.final = ([string]$c.status -eq 'completed')
+                            $i3.prog[($nm -split ' ')[-1]] = $pr
+                        }
+                    } catch {}
+                    if ($x3.runDone) { $i3.fin = $true }   # the run had finished before this read, so the last numbers are in
+                    Render
+                } @{ id = $ctx.id; runDone = $ctx.runDone } (Get-RepoLogin $ctx.repo)
+            } elseif ($ctx.runDone -and -not $info.liveBusy) { $info.fin = $true }
+        } catch {}
+        Render
+    } @{ id = $id; repo = $repo; sha = [string]$run.headSha; runDone = ([string]$run.status -eq 'completed') } (Get-RepoLogin $repo)
+}
+function Refresh-E2E {
+    $repo = Get-E2ERepo
+    if (-not $gh -or -not $repo) { return }
+    $script:e2eAt = Get-Date
+    Start-Gh "run list --workflow e2e.yml --repo $repo --limit 3 --json databaseId,status,conclusion,displayTitle,createdAt,updatedAt,url,headSha" {
+        param($out, $err, $code, $ctx)
+        if ($code -ne 0) { $m = ([string]$err).Trim(); if ($m.Length -gt 100) { $m = $m.Substring(0, 100) }; $script:e2eErr = $m; Render; return }
+        $script:e2eErr = ''
+        try {
+            $parsed = $out | ConvertFrom-Json
+            $script:e2eRuns = @($parsed)
+            foreach ($r in $script:e2eRuns) { Update-E2ERun $r $ctx.repo }
+        } catch {}
+        Render
+    } @{ repo = $repo } (Get-RepoLogin $repo)
+}
+# Totals over all parts that have been read so far
+function Get-E2EProgress($id) {
+    $info = $script:e2eInfo[[string]$id]
+    if (-not $info) { return $null }
+    $t = 0; $d = 0; $f = 0
+    foreach ($p in $info.prog.Values) { $t += [int]$p.total; $d += [int]$p.done; $f += [int]$p.failed }
+    if ($t -le 0) { return $null }
+    @{ total = $t; done = $d; failed = $f }
+}
+function Get-E2EProgressText($id) {
+    $pg = Get-E2EProgress $id
+    if (-not $pg) { return '' }
+    ((T 'e2eTests') -f $pg.done, $pg.total) + $(if ($pg.failed -gt 0) { ' · ' + ((T 'e2eFailedN') -f $pg.failed) } else { '' })
+}
+# The detail block under a run: what was chosen, how far it has come, the parts, and the tests running right now
+function New-E2EDetail($id, $st) {
+    $info = $script:e2eInfo[[string]$id]
+    if (-not $info) { return $null }
+    $sp = New-Object Windows.Controls.StackPanel; $sp.Margin = '0,2,0,0'
+    $grey = { param($text, $color) $tb = New-Object Windows.Controls.TextBlock; $tb.Text = $text; $tb.Foreground = Br $color; $tb.FontSize = 12; $tb.TextTrimming = 'CharacterEllipsis'; $tb.ToolTip = $text; $tb }
+    $plan = @($info.jobs | Where-Object { $_.name -eq 'plan' })[0]
+    if ($info.choice) { [void]$sp.Children.Add((& $grey ((T 'e2eChoice') -f $info.choice) '#999999')) }
+    elseif ($plan -and $plan.status -ne 'completed') { [void]$sp.Children.Add((& $grey (T 'e2ePlanning') '#999999')) }
+    $pg = Get-E2EProgress $id
+    if ($pg) {
+        $col = if ($pg.failed -gt 0 -or $st -eq 'fail') { $colors.fail } elseif ($st -eq 'ok') { $colors.ok } else { $colors.running }
+        [void]$sp.Children.Add((& $grey (Get-E2EProgressText $id) $(if ($pg.failed -gt 0) { $colors.fail } else { '#999999' })))
+        $bar = New-Object Windows.Controls.ProgressBar; $bar.Minimum = 0; $bar.Maximum = $pg.total; $bar.Value = [math]::Min($pg.done, $pg.total); $bar.Height = 4; $bar.Margin = '0,2,0,2'
+        $bar.BorderThickness = 0; $bar.Background = Br '#3A3A3A'; $bar.Foreground = Br $col
+        [void]$sp.Children.Add($bar)
+    }
+    $parts = @($info.jobs | Where-Object { $_.name -like 'e2e*' })
+    if ($parts.Count -gt 1) {
+        $wp = New-Object Windows.Controls.WrapPanel; $wp.Margin = '0,1,0,1'
+        foreach ($j in $parts) {
+            $no = Get-E2EPartNo $j.name
+            $c = switch ($true) { ($j.status -eq 'in_progress') { $colors.running } ($j.conclusion -eq 'success') { $colors.ok } ($j.conclusion -in 'failure', 'timed_out') { $colors.fail } ($j.conclusion -in 'cancelled', 'skipped') { $colors.cancel } default { $colors.queued } }
+            $h = New-Object Windows.Controls.StackPanel; $h.Orientation = 'Horizontal'; $h.Margin = '0,0,10,0'
+            $d = New-Object Windows.Shapes.Ellipse; $d.Width = 7; $d.Height = 7; $d.Margin = '0,1,4,0'; $d.Fill = Br $c
+            $label = (T 'e2ePart') -f $no
+            $pp = $info.prog[$no]
+            if ($pp -and $pp.total -gt 0) { $label += " $($pp.done)/$($pp.total)" } elseif ($j.status -ne 'in_progress' -and $j.status -ne 'completed') { $label += ' · ' + (T 'e2eWaitPart') }
+            $tb = New-Object Windows.Controls.TextBlock; $tb.Text = $label; $tb.Foreground = Br '#999999'; $tb.FontSize = 11
+            [void]$h.Children.Add($d); [void]$h.Children.Add($tb); [void]$wp.Children.Add($h)
+        }
+        [void]$sp.Children.Add($wp)
+    }
+    $now = @()
+    foreach ($j in $parts) { $pp = $info.prog[(Get-E2EPartNo $j.name)]; if ($j.status -eq 'in_progress' -and $pp) { $now += @($pp.running) } }
+    foreach ($t in ($now | Select-Object -First 4)) { [void]$sp.Children.Add((& $grey ('▶ ' + (Format-E2ETest $t)) '#CCCCCC')) }
+    if ($sp.Children.Count -eq 0) { return $null }
+    $sp
+}
+# The list on the E2E tab: the latest runs of the workflow, each with its detail block
+function Render-E2ERuns {
+    $el.e2eRunsList.Children.Clear()
+    if ($cfg.tab -ne 'e2e') { return }
+    $h = New-Object Windows.Controls.TextBlock; $h.Text = T 'e2eRuns'; $h.Foreground = Br '#999999'; $h.FontSize = 12; $h.FontWeight = 'SemiBold'; $h.Margin = '0,4,0,4'
+    [void]$el.e2eRunsList.Children.Add($h)
+    if ($script:e2eErr) {
+        $er = New-Object Windows.Controls.TextBlock; $er.Text = ((T 'e2eRunsErr') -f $script:e2eErr); $er.Foreground = Br $colors.fail; $er.FontSize = 12; $er.TextWrapping = 'Wrap'
+        [void]$el.e2eRunsList.Children.Add($er)
+    } elseif (-not $script:e2eRuns.Count) {
+        $nr = New-Object Windows.Controls.TextBlock; $nr.Text = T 'e2eNoRuns'; $nr.Foreground = Br '#777777'; $nr.FontSize = 12
+        [void]$el.e2eRunsList.Children.Add($nr)
+    }
+    foreach ($r in $script:e2eRuns) {
+        $st = Get-State $r
+        $row = New-Object Windows.Controls.Border; $row.Padding = '0,5,0,5'; $row.Background = Br '#00000000'; $row.Cursor = 'Hand'; $row.Tag = [string]$r.url
+        $g = New-Object Windows.Controls.Grid
+        $c0 = New-Object Windows.Controls.ColumnDefinition; $c0.Width = 'Auto'; $c1 = New-Object Windows.Controls.ColumnDefinition; $c1.Width = '*'
+        [void]$g.ColumnDefinitions.Add($c0); [void]$g.ColumnDefinitions.Add($c1)
+        $dot = New-Object Windows.Shapes.Ellipse; $dot.Width = 10; $dot.Height = 10; $dot.Margin = '0,5,10,0'; $dot.VerticalAlignment = 'Top'; $dot.Fill = Br $colors[$st]
+        $sp = New-Object Windows.Controls.StackPanel; [Windows.Controls.Grid]::SetColumn($sp, 1)
+        $t1 = New-Object Windows.Controls.TextBlock; $t1.Text = [string]$r.displayTitle; $t1.Foreground = Br '#EEEEEE'; $t1.FontSize = 13; $t1.TextTrimming = 'CharacterEllipsis'; $t1.ToolTip = [string]$r.displayTitle
+        $created = ToUtc $r.createdAt
+        if ($st -in 'running', 'queued') { $when = (T $stateKey[$st]) + ' ' + (Format-Dur ((Get-Date).ToUniversalTime() - $created)) }
+        else { $when = (T $stateKey[$st]) + ' · ' + (Format-Dur ((ToUtc $r.updatedAt) - $created)) + ' · ' + (Format-Ago (ToUtc $r.updatedAt)) }
+        $t2 = New-Object Windows.Controls.TextBlock; $t2.Text = $when; $t2.Foreground = Br '#999999'; $t2.FontSize = 12
+        [void]$sp.Children.Add($t1); [void]$sp.Children.Add($t2)
+        $dt = New-E2EDetail ([string]$r.databaseId) $st
+        if ($dt) { [void]$sp.Children.Add($dt) }
+        [void]$g.Children.Add($dot); [void]$g.Children.Add($sp)
+        $row.Child = $g
+        [void]$el.e2eRunsList.Children.Add($row)
+    }
+}
+
+# ---------- hide sub-tabs ----------
+# The chip rows are the sub-tabs: the accounts on the Runs tab (flt), the source on the Usage tab (src) and the repository on the E2E tab (e2erepo).
+# A sub-tab can be hidden with a right click: the button and the content go (the runs of that account are not listed, counted or shown in the
+# header). It stays hidden, also after a restart, until it is shown again (right click, or the "+N" next to the tabs). Keys: 'flt:gh:name', 'src:cf:id', 'e2erepo:owner/name'.
+function Get-SubLabel($key) {
+    $k = [string]$key
+    if ($k -like 'e2erepo:*') { return (($k.Substring(8)) -split '/')[-1] }
+    $i = $k.IndexOf(':')
+    if ($i -lt 0) { return $k }
+    Get-AcctLabel $k.Substring($i + 1)
+}
+# How many sub-tabs the row of this kind has left to show: the last one cannot be hidden
+function Get-SubVisible($kind) {
+    switch ($kind) {
+        'flt' { @(Get-Accounts | Where-Object { -not (Test-Hidden "flt:$($_.key)") }) }
+        'src' { @(Get-Accounts | Where-Object { -not (Test-Hidden "src:$($_.key)") }) }
+        'e2erepo' { @(Get-Repos | Where-Object { -not (Test-Hidden "e2erepo:$_") }) }
+        default { @() }
+    }
+}
+function Test-CanHide($kind) { @(Get-SubVisible $kind).Count -ge 2 }
+# The sub-tab (chip) under the mouse, or $null
+function Find-SubTab($src) {
+    while ($src) {
+        if ($src -is [Windows.FrameworkElement] -and $src.Tag -is [string] -and $src.Tag -match '^cmd:(flt|src|e2erepo):(.+)$') {
+            $kind = $Matches[1]; $val = $Matches[2]
+            if ($kind -eq 'flt' -and $val -eq 'all') { return $null }
+            return @{ kind = $kind; key = "${kind}:$val"; label = $(if ($kind -eq 'e2erepo') { ($val -split '/')[-1] } else { Get-AcctLabel $val }) }
+        }
+        $src = if ($src -is [Windows.Media.Visual] -or $src -is [Windows.Media.Media3D.Visual3D]) { [Windows.Media.VisualTreeHelper]::GetParent($src) } else { $null }
+    }
+    $null
+}
+function Hide-Sub($key) {
+    $kind = ([string]$key -split ':')[0]
+    if (-not (Test-CanHide $kind)) { return }
+    Set-Hidden $key $true
+    $val = ([string]$key).Substring($kind.Length + 1)
+    if ($kind -eq 'flt' -and $script:runFilter -eq $val) { $script:runFilter = 'all'; $cfg.runFilter = 'all'; Save-Config }
+    if ($kind -eq 'e2erepo' -and [string]$cfg.e2eRepo -eq $val) { $cfg.e2eRepo = ''; $script:e2eRuns = @(); Save-Config }
+    if ($kind -eq 'src' -and $script:usageSrc -eq $val) { Fix-HiddenSrc; if (-not (Get-UsageAt)) { Refresh-Usage } }
+    Merge-Runs
+}
+function Show-Sub($key) { Set-Hidden $key $false; Merge-Runs; if ($cfg.tab -eq 'e2e') { Refresh-E2E } }
+function Show-AllSubs { $cfg.hiddenSubs = @(); Save-Config; Merge-Runs; if ($cfg.tab -eq 'e2e') { Refresh-E2E } }
+# If the saved source of the Usage tab has been hidden, take the first one that is still shown
+function Fix-HiddenSrc {
+    if (-not (Test-Hidden "src:$script:usageSrc")) { return }
+    $alt = @(Get-Accounts | Where-Object { -not (Test-Hidden "src:$($_.key)") })[0]
+    if ($alt) { Set-UsageSrc $alt.key; Save-Config }
+}
+# The "+N" next to the tabs says that something is hidden, and one click shows it all
+function Update-HiddenMark {
+    $n = @(Get-Hidden).Count
+    $el.tabMore.Visibility = $(if ($n) { 'Visible' } else { 'Collapsed' })
+    $el.tabMore.Text = "+$n"; $el.tabMore.ToolTip = (T 'subsHidden') -f $n
+}
+
 # ---------- menu ----------
 $menu = New-Object Windows.Controls.ContextMenu
 $menuItems = @{}
 function AddItem($key, $action, $parent = $menu) { $mi = New-Object Windows.Controls.MenuItem; $mi.Add_Click($action); [void]$parent.Items.Add($mi); if ($key) { $menuItems[$key] = $mi }; $mi }
 AddItem 'mRefresh' { Refresh; if ($cfg.tab -eq 'usage') { Refresh-Usage } } | Out-Null
 AddItem 'mMinimize' { Set-Minimized (-not $cfg.minimized) } | Out-Null
+# Sub-tabs: hide the one that was right-clicked, show one again, or show all
+$subsMenu = AddItem 'mSubs' {}
+$script:ctxSub = $null
+function Build-SubsMenu {
+    $subsMenu.Items.Clear()
+    $any = $false
+    if ($script:ctxSub -and (Test-CanHide $script:ctxSub.kind)) {
+        $mi = New-Object Windows.Controls.MenuItem; $mi.Header = (T 'mSubHide') -f $script:ctxSub.label; $mi.Tag = $script:ctxSub.key
+        $mi.Add_Click({ Hide-Sub ([string]$this.Tag) }); [void]$subsMenu.Items.Add($mi); $any = $true
+    }
+    $hid = @(Get-Hidden)
+    if ($hid.Count) {
+        if ($any) { [void]$subsMenu.Items.Add((New-Object Windows.Controls.Separator)) }
+        foreach ($k in $hid) {
+            $mi = New-Object Windows.Controls.MenuItem; $mi.Header = (T 'mSubShow') -f (Get-SubLabel $k); $mi.Tag = $k
+            $mi.Add_Click({ Show-Sub ([string]$this.Tag) }); [void]$subsMenu.Items.Add($mi)
+        }
+        [void]$subsMenu.Items.Add((New-Object Windows.Controls.Separator))
+        $ma = New-Object Windows.Controls.MenuItem; $ma.Header = T 'mSubsAll'; $ma.Add_Click({ Show-AllSubs }); [void]$subsMenu.Items.Add($ma)
+        $any = $true
+    }
+    $subsMenu.Header = T 'mSubs'
+    $subsMenu.Visibility = $(if ($any) { 'Visible' } else { 'Collapsed' })
+}
+$menu.Add_Opened({ Build-SubsMenu })
+$win.Add_PreviewMouseRightButtonDown({ param($s, $e) $script:ctxSub = Find-SubTab $e.OriginalSource })
 $budgetMenu = AddItem 'mBudgets' {}
 $budgetItems = @{}
 foreach ($bk in 'Actions', 'Packages', 'Git LFS', 'Codespaces', 'AI') {
@@ -1615,6 +1908,7 @@ $win.Add_MouseLeftButtonDown({
         elseif ($act -eq 'cmd:restore') { Set-Minimized $false }
         elseif ($act -eq 'cmd:update') { Start-Update }
         elseif ($act -like 'cmd:tab:*') { Show-Tab ($act -replace '^cmd:tab:', '') }
+        elseif ($act -eq 'cmd:subs:all') { Show-AllSubs }
         elseif ($act -eq 'cmd:e2e:ask') { Open-E2EPicker }
         elseif ($act -like 'cmd:e2erepo:*') { $cfg.e2eRepo = $act -replace '^cmd:e2erepo:', ''; Save-Config; Render }
         elseif ($act -like 'cmd:e2e:*') { Start-E2E ($act -replace '^cmd:e2e:', '') }
@@ -1707,6 +2001,7 @@ $win.Add_MouseLeftButtonUp({
     if ($d.moved) { $cfg.tabOrder = @(Get-TabOrder); Save-Config } else { Show-Tab $d.key }
 })
 
+Fix-HiddenSrc
 Show-Tab $(if ($cfg.tab -in 'usage', 'e2e') { $cfg.tab } else { 'runs' })
 Refresh
 if ($cfg.minimized) { Set-Minimized $true } else { Keep-OnScreen }   # a saved position can be on a monitor that is gone

@@ -8,7 +8,7 @@ A small always-on-top Windows desktop widget that shows the state of your GitHub
 - **Several accounts side by side, so work and private can be kept apart:** several GitHub logins (gh accounts) and several Cloudflare accounts at the same time. Every row carries a small coloured label with the source and the name you gave the account (`GH · Work`, `CF · Private`), the Runs tab has a filter row (All, then one chip per account, with a red or yellow dot where something is failing or running), the room in the list is shared between the accounts so a busy one cannot push the others out, and the header says where it is going on (`1 running · Work`, `Failing · Private`). See [Accounts](#accounts-github-and-cloudflare).
 - **Several Cloudflare accounts** (for example work and private) next to GitHub: builds from Workers Builds and the latest deployment of each Worker show up as rows on the Runs tab, marked with the account's name. The Usage tab gets a switch (GitHub, then one entry per account) with today's Workers requests, D1 rows read and written and Workers AI neurons against the Workers Free daily allowance. See [Cloudflare accounts](#cloudflare-accounts).
 - **Usage tab** (next to Runs): this month's GitHub Actions usage from the billing API (`gh api users/<you>/settings/billing/usage/summary`, needs the `user` scope on your `gh` login). It opens with a bar chart of usage per day and an **All services** list (with what is billable this month in the heading) with one row per service, also when nothing was used: Actions, Packages, Git LFS, Codespaces and AI credits (all Copilot / premium request SKUs, read from the premium request report). Each row shows the quantities and what is billable against that service's monthly budget, with a small bar and the same month marker. **Click a row and the bar chart (usage per day, in the service's own unit) and the per-repository list switch to that service.** Anything else GitHub reports ends up under Other. 
-- **E2E tab** (next to Usage): starts the manual `E2E (manuelt)` workflow in the first watched repo (`e2eRepo` in `config.json` overrides it) with `gh workflow run e2e.yml -f tests=...`. Three buttons: **Relevant tests** (the tests that belong to the files changed in the last commit), **All tests** (split into 4 parts) and **Choose tests...** (a window with a check box and a short description per test, read from `tests/e2e/oversikt.json` in the repo; ticking everything runs all of them). The run then shows up on the Runs tab like any other run. Needs `gh` logged in with permission to run workflows.
+- **E2E tab** (next to Usage): starts the manual `E2E (manuelt)` workflow in the first watched repo (`e2eRepo` in `config.json` overrides it) with `gh workflow run e2e.yml -f tests=...`. Three buttons: **Relevant tests** (the tests that belong to the files changed in the last commit), **All tests** (split into 4 parts) and **Choose tests...** (a window with a check box and a short description per test, read from `tests/e2e/oversikt.json` in the repo; ticking everything runs all of them). Below the buttons the tab lists the latest runs of the workflow (see *Which tests are running* below). The run also shows up on the Runs tab like any other run. Needs `gh` logged in with permission to run workflows.
 - Budgets: GitHub does not give out budgets or spending limits for personal accounts through the API, so they are stored in the widget, one monthly budget per service (right-click, *Budget per service*, `0` clears). The budgets start out as the ones on github.com/settings/billing/budgets when they were read on 2026-10-25: Actions $10, Packages $10, Git LFS $5, Codespaces $5, AI credits $5. GitHub reports usage with a delay of an hour or more. A link at the bottom of the full widget opens your GitHub billing overview (github.com/settings/billing/summary).
 - Minimize with the dash in the corner (or right-click, Minimize): a small pill that shows only the runs that are running, with elapsed time and jobs done. With nothing running it is a single dot, green (all green) or red (failing). Click the pill to bring the full list back; the pill remembers its own position.
 - Click a run to open it on GitHub. Drag the widget anywhere; the position is remembered.
@@ -43,6 +43,7 @@ Right-click the widget:
 | --- | --- |
 | Refresh now | Reads GitHub right away |
 | Minimize | Shrinks to only what is running |
+| Sub-tabs | Hide the chip you right-clicked (and its content), show one again, or show all hidden ones (see *Hide sub-tabs*) |
 | Budget per service | Monthly budget in dollars for Actions, Packages, Git LFS, Codespaces and AI credits |
 | Add repository… | Watch another repository (`owner/name`) |
 | Remove repository | Stop watching one |
@@ -61,7 +62,7 @@ With more than one account the widget shows which one every row belongs to. With
 - **Label on every row:** a small coloured box in front of the grey text, `GH · <name>` for GitHub and `CF · <name>` for Cloudflare. Each account keeps its own colour (in the order the accounts are listed). The same colours are used on the filter row and on the source switch of the Usage tab.
 - **Filter row (Runs tab):** *All*, then one chip per account. A red dot on a chip means the latest run of some workflow there failed, a yellow dot that something is running. Click a chip to see only that account; the choice is remembered.
 - **Room in the list:** the list holds `maxRows` rows (8). What is running comes first, then what is failing now, then the accounts get an equal share (8 rows and 4 accounts is 2 each), and the rest is filled with the newest.
-- **Header and minimized pill:** the summary counts all accounts, also the ones the filter hides, and names where: `1 running · Work`, `Failing · Private` (the first account, then `+N`). The minimized pill puts the account in front of each running line.
+- **Header and minimized pill:** the summary counts all accounts, also the ones the filter hides (but not an account you have hidden, see *Hide sub-tabs*), and names where: `1 running · Work`, `Failing · Private` (the first account, then `+N`). The minimized pill puts the account in front of each running line.
 - **When a run finishes** the line at the top starts with the account.
 
 ### GitHub: several logins
@@ -113,3 +114,20 @@ The account chips (the filter row on Runs and the source row on Usage) can be dr
 ## E2E per repository and account
 
 With more than one watched repository, the E2E tab has a chip per repository, marked with the GitHub account it is read with. The tests start in the chosen repository with that account's login, and the list behind **Choose tests…** is read per repository.
+
+## Which tests are running
+
+The E2E tab does not only start the tests, it shows them. For each of the latest runs of `e2e.yml` (and, under the run, on the Runs tab) it shows:
+
+- **What was chosen:** the run is named `E2E · <choice>` (`run-name`), and the *plan* job leaves a notice annotation titled `e2e-valg` with the files (or `alle`). The line reads `Tests: kunde, a11y`.
+- **How far it has come:** `47/121 tests · 1 failed` with a thin bar (green when everything passed, red with failures), summed over all parts.
+- **The parts:** one dot per part (`Part 1 47/121`), yellow while it runs, green or red when done, `waiting` before it starts.
+- **What runs right now:** up to four lines `▶ kunde · title (1280)`, the tests the workers are on at this moment.
+
+GitHub does not hand out the log of a job that is still running, so the numbers come from a check run, `e2e-live <run id> <part>`, that the test reporter in the repo (`tests/helpers/ci-progress-reporter.mjs`) keeps up to date on the commit while the tests run (every five seconds at most). Its `output.text` is JSON: `{ total, done, failed, running: ["<project> | <file> | <title>"] }`. The check ends as *neutral*, so it never turns the commit red. The workflow needs `checks: write`, and the repo must have the reporter; without it the tab still shows the choice and the parts. The widget reads the runs every ten seconds while something runs; a finished run is read once and kept. The minimized pill adds the count (`jobs 2/5 · 228/362 tests`).
+
+## Hide sub-tabs
+
+The chip rows are the sub-tabs: the accounts on the Runs tab, the source on the Usage tab and the repository on the E2E tab. Right-click a chip, **Sub-tabs**, **Hide “name”**. The chip **and its content** go: the runs of a hidden account are not listed, not counted in the header and not in the minimized pill, and a hidden source or repository is skipped. If the hidden one was selected, the view moves to the next one (Runs: *All*). The last sub-tab in a row cannot be hidden.
+
+It stays hidden, also after a restart, until you show it again: a small amber **+N** appears at the right of the tabs (click it to show everything), and right-click, **Sub-tabs** lists each hidden one (**Show “name”**) and **Show all hidden**. The choice is kept as `hiddenSubs` in `config.json` (`flt:<account>`, `src:<account>`, `e2erepo:<repo>`).
