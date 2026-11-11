@@ -157,6 +157,7 @@ $strings = @{
         e2eStarting = 'Starting e2e: {0}…'; e2eStarted = 'E2E started: {0}. Follow it under Runs.'; e2eFail = 'Could not start e2e: {0}'
         e2eRuns = 'Runs'; e2eNoRuns = 'No e2e runs yet'; e2eChoice = 'Tests: {0}'; e2ePlanning = 'Choosing tests…'; e2eTests = '{0}/{1} tests'; e2eFailedN = '{0} failed'; e2ePart = 'Part {0}'; e2eWaitPart = 'waiting'; e2eRunsErr = 'Could not read e2e runs: {0}'
         mSubs = 'Sub-tabs'; mSubHide = 'Hide “{0}”'; mSubShow = 'Show “{0}”'; mSubsAll = 'Show all hidden'; subsHidden = 'Hidden sub-tabs ({0}). Click to show them all.'
+        mSubsPick = 'Choose sub-tabs to hide…'; sgRuns = 'Runs: accounts'; sgUsage = 'Usage: sources'; sgE2E = 'E2E: repositories'; subsHelp = 'Tick what you want to hide. A hidden sub-tab and its content stay out of sight until you untick it.'; subsLast = 'At least one in each group must stay visible.'; subsNone = 'There is nothing to choose yet: sub-tabs appear when you watch more than one account or repository.'
         askRepo = 'Repository to watch (owner/name):'; badRepo = 'Use the form owner/name, for example saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh is not signed in as {0}. Choose GitHub accounts, Sign in another account.'
         mGh = 'GitHub accounts'; mGhAdd = 'Sign in another account…'; mGhRefresh = 'Refresh accounts'; mGhName = 'Rename account'
@@ -200,6 +201,7 @@ $strings = @{
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kjøringer.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         e2eRuns = 'Kjøringer'; e2eNoRuns = 'Ingen e2e-kjøringer ennå'; e2eChoice = 'Tester: {0}'; e2ePlanning = 'Velger tester…'; e2eTests = '{0}/{1} tester'; e2eFailedN = '{0} feilet'; e2ePart = 'Del {0}'; e2eWaitPart = 'venter'; e2eRunsErr = 'Kunne ikke lese e2e-kjøringer: {0}'
         mSubs = 'Underfaner'; mSubHide = 'Skjul «{0}»'; mSubShow = 'Vis «{0}»'; mSubsAll = 'Vis alle skjulte'; subsHidden = 'Skjulte underfaner ({0}). Klikk for å vise dem alle.'
+        mSubsPick = 'Velg underfaner å skjule…'; sgRuns = 'Kjøringer: kontoer'; sgUsage = 'Forbruk: kilder'; sgE2E = 'E2E: repoer'; subsHelp = 'Kryss av det du vil skjule. En skjult underfane og innholdet står skjult til du fjerner krysset.'; subsLast = 'Minst én i hver gruppe må være synlig.'; subsNone = 'Det er ingenting å velge ennå: underfaner finnes når du følger mer enn én konto eller ett repo.'
         askRepo = 'Repo som skal følges (eier/navn):'; badRepo = 'Bruk formen eier/navn, for eksempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh er ikke innlogget som {0}. Velg GitHub-kontoer, Logg inn en annen konto.'
         mGh = 'GitHub-kontoer'; mGhAdd = 'Logg inn en annen konto…'; mGhRefresh = 'Oppdater kontoer'; mGhName = 'Gi konto nytt navn'
@@ -243,6 +245,7 @@ $strings = @{
         e2eStarting = 'Startar e2e: {0}…'; e2eStarted = 'E2E startad: {0}. Följ den under Körningar.'; e2eFail = 'Kunde inte starta e2e: {0}'
         e2eRuns = 'Körningar'; e2eNoRuns = 'Inga e2e-körningar ännu'; e2eChoice = 'Tester: {0}'; e2ePlanning = 'Väljer tester…'; e2eTests = '{0}/{1} tester'; e2eFailedN = '{0} misslyckades'; e2ePart = 'Del {0}'; e2eWaitPart = 'väntar'; e2eRunsErr = 'Kunde inte läsa e2e-körningar: {0}'
         mSubs = 'Underflikar'; mSubHide = 'Dölj “{0}”'; mSubShow = 'Visa “{0}”'; mSubsAll = 'Visa alla dolda'; subsHidden = 'Dolda underflikar ({0}). Klicka för att visa alla.'
+        mSubsPick = 'Välj underflikar att dölja…'; sgRuns = 'Körningar: konton'; sgUsage = 'Förbrukning: källor'; sgE2E = 'E2E: repon'; subsHelp = 'Kryssa i det du vill dölja. En dold underflik och dess innehåll förblir dolda tills du tar bort krysset.'; subsLast = 'Minst en i varje grupp måste vara synlig.'; subsNone = 'Det finns inget att välja ännu: underflikar finns när du följer fler än ett konto eller repo.'
         askRepo = 'Repo att följa (ägare/namn):'; badRepo = 'Använd formen ägare/namn, till exempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh är inte inloggad som {0}. Välj GitHub-konton, Logga in ett annat konto.'
         mGh = 'GitHub-konton'; mGhAdd = 'Logga in ett annat konto…'; mGhRefresh = 'Uppdatera konton'; mGhName = 'Byt namn på konto'
@@ -286,6 +289,7 @@ $strings = @{
         e2eStarting = 'Starter e2e: {0}…'; e2eStarted = 'E2E startet: {0}. Følg den under Kørsler.'; e2eFail = 'Kunne ikke starte e2e: {0}'
         e2eRuns = 'Kørsler'; e2eNoRuns = 'Ingen e2e-kørsler endnu'; e2eChoice = 'Tests: {0}'; e2ePlanning = 'Vælger tests…'; e2eTests = '{0}/{1} tests'; e2eFailedN = '{0} fejlede'; e2ePart = 'Del {0}'; e2eWaitPart = 'venter'; e2eRunsErr = 'Kunne ikke læse e2e-kørsler: {0}'
         mSubs = 'Underfaner'; mSubHide = 'Skjul “{0}”'; mSubShow = 'Vis “{0}”'; mSubsAll = 'Vis alle skjulte'; subsHidden = 'Skjulte underfaner ({0}). Klik for at vise dem alle.'
+        mSubsPick = 'Vælg underfaner der skal skjules…'; sgRuns = 'Kørsler: konti'; sgUsage = 'Forbrug: kilder'; sgE2E = 'E2E: repos'; subsHelp = 'Afkryds det du vil skjule. En skjult underfane og dens indhold forbliver skjult, til du fjerner fluebenet.'; subsLast = 'Mindst én i hver gruppe skal være synlig.'; subsNone = 'Der er intet at vælge endnu: underfaner findes, når du følger mere end én konto eller ét repo.'
         askRepo = 'Repo der skal følges (ejer/navn):'; badRepo = 'Brug formen ejer/navn, for eksempel saysphilippe/Nerdehagen.'
         ghNoLogin = 'gh er ikke logget ind som {0}. Vælg GitHub-konti, Log ind på en anden konto.'
         mGh = 'GitHub-konti'; mGhAdd = 'Log ind på en anden konto…'; mGhRefresh = 'Opdater konti'; mGhName = 'Omdøb konto'
@@ -1649,6 +1653,80 @@ function Update-HiddenMark {
     $el.tabMore.Text = "+$n"; $el.tabMore.ToolTip = (T 'subsHidden') -f $n
 }
 
+# ---------- the list: choose which sub-tabs to hide ----------
+# One group per row of chips that exists (a row only exists with two or more accounts or repositories). A ticked box means hidden.
+function Get-SubGroups {
+    $g = @()
+    $accts = @(Get-Accounts)
+    if ($accts.Count -ge 2) {
+        $g += @{ title = T 'sgRuns'; items = @($accts | ForEach-Object { @{ key = "flt:$($_.key)"; label = "$($_.src) · $($_.label)" } }) }
+        $g += @{ title = T 'sgUsage'; items = @($accts | ForEach-Object { @{ key = "src:$($_.key)"; label = "$($_.src) · $($_.label)" } }) }
+    }
+    $repos = @(Get-Repos)
+    if ($repos.Count -ge 2) { $g += @{ title = T 'sgE2E'; items = @($repos | ForEach-Object { @{ key = "e2erepo:$_"; label = [string]$_ } }) } }
+    $g
+}
+# At least one sub-tab in each group has to stay visible
+function Test-SubsValid($groups, $hide) {
+    foreach ($grp in $groups) { if (@($grp.items | Where-Object { @($hide) -notcontains $_.key }).Count -lt 1) { return $false } }
+    $true
+}
+# $managed: every key the list shows; $hide: the ticked ones. Hidden keys that are not in the list (a removed account) are left alone.
+function Apply-HiddenSet($managed, $hide) {
+    $keep = @(Get-Hidden | Where-Object { @($managed) -notcontains $_ })
+    $cfg.hiddenSubs = @($keep + @($hide)); Save-Config
+    if ($script:runFilter -ne 'all' -and (Test-Hidden "flt:$($script:runFilter)")) { $script:runFilter = 'all'; $cfg.runFilter = 'all'; Save-Config }
+    if ($cfg.e2eRepo -and (Test-Hidden "e2erepo:$($cfg.e2eRepo)")) { $cfg.e2eRepo = ''; $script:e2eRuns = @(); Save-Config }
+    $before = $script:usageSrc
+    Fix-HiddenSrc
+    Merge-Runs
+    if ($cfg.tab -eq 'usage' -and $script:usageSrc -ne $before -and -not (Get-UsageAt)) { Refresh-Usage }
+    if ($cfg.tab -eq 'e2e') { Refresh-E2E }
+}
+function New-SubsDialog {
+    $groups = @(Get-SubGroups)
+    $dlg = New-Object Windows.Window
+    $dlg.Title = T 'mSubsPick'; $dlg.WindowStartupLocation = 'CenterScreen'; $dlg.ResizeMode = 'NoResize'; $dlg.SizeToContent = 'WidthAndHeight'
+    $dlg.MinWidth = 380; $dlg.MaxWidth = 460; $dlg.MaxHeight = 600; $dlg.Background = Br '#1E1E1E'; $dlg.ShowInTaskbar = $false; $dlg.Topmost = $true
+    $root = New-Object Windows.Controls.StackPanel; $root.Margin = '16'
+    $help = New-Object Windows.Controls.TextBlock; $help.Text = $(if ($groups.Count) { T 'subsHelp' } else { T 'subsNone' }); $help.Foreground = Br '#999999'; $help.FontSize = 12; $help.TextWrapping = 'Wrap'; $help.Margin = '0,0,0,8'
+    [void]$root.Children.Add($help)
+    $boxes = @()
+    $scroll = New-Object Windows.Controls.ScrollViewer; $scroll.VerticalScrollBarVisibility = 'Auto'; $scroll.MaxHeight = 380
+    $list = New-Object Windows.Controls.StackPanel
+    foreach ($grp in $groups) {
+        $h = New-Object Windows.Controls.TextBlock; $h.Text = $grp.title; $h.Foreground = Br '#D97757'; $h.FontWeight = 'SemiBold'; $h.FontSize = 13; $h.Margin = '0,8,0,4'
+        [void]$list.Children.Add($h)
+        foreach ($it in $grp.items) {
+            $cb = New-Object Windows.Controls.CheckBox; $cb.Content = $it.label; $cb.Tag = $it.key; $cb.IsChecked = (Test-Hidden $it.key)
+            $cb.Foreground = Br '#EEEEEE'; $cb.FontSize = 13; $cb.Margin = '8,2,0,2'
+            [void]$list.Children.Add($cb); $boxes += $cb
+        }
+    }
+    $scroll.Content = $list; [void]$root.Children.Add($scroll)
+    $err = New-Object Windows.Controls.TextBlock; $err.Foreground = Br $colors.fail; $err.FontSize = 12; $err.TextWrapping = 'Wrap'; $err.Margin = '0,8,0,0'; $err.Visibility = 'Collapsed'
+    [void]$root.Children.Add($err)
+    $bp = New-Object Windows.Controls.StackPanel; $bp.Orientation = 'Horizontal'; $bp.HorizontalAlignment = 'Right'; $bp.Margin = '0,12,0,0'
+    $ok = New-Object Windows.Controls.Button; $ok.Content = 'OK'; $ok.IsDefault = $true; $ok.Padding = '16,4,16,4'; $ok.Margin = '0,0,8,0'; $ok.IsEnabled = ($groups.Count -gt 0)
+    $cancel = New-Object Windows.Controls.Button; $cancel.Content = T 'cfCancel'; $cancel.IsCancel = $true; $cancel.Padding = '16,4,16,4'
+    [void]$bp.Children.Add($ok); [void]$bp.Children.Add($cancel); [void]$root.Children.Add($bp)
+    $dlg.Content = $root
+    $state = @{ win = $dlg; groups = $groups; boxes = $boxes; err = $err; ok = $ok }
+    $ok.Add_Click({
+        $ticked = @($state.boxes | Where-Object { $_.IsChecked } | ForEach-Object { [string]$_.Tag })
+        if (-not (Test-SubsValid $state.groups $ticked)) { $state.err.Text = T 'subsLast'; $state.err.Visibility = 'Visible'; return }
+        $state.win.DialogResult = $true
+    }.GetNewClosure())
+    $state
+}
+function Show-SubsDialog {
+    $d = New-SubsDialog
+    if ($d.win.ShowDialog() -ne $true) { return }
+    $managed = @($d.boxes | ForEach-Object { [string]$_.Tag })
+    $hide = @($d.boxes | Where-Object { $_.IsChecked } | ForEach-Object { [string]$_.Tag })
+    Apply-HiddenSet $managed $hide
+}
+
 # ---------- menu ----------
 $menu = New-Object Windows.Controls.ContextMenu
 $menuItems = @{}
@@ -1676,8 +1754,10 @@ function Build-SubsMenu {
         $ma = New-Object Windows.Controls.MenuItem; $ma.Header = T 'mSubsAll'; $ma.Add_Click({ Show-AllSubs }); [void]$subsMenu.Items.Add($ma)
         $any = $true
     }
+    if ($subsMenu.Items.Count) { [void]$subsMenu.Items.Add((New-Object Windows.Controls.Separator)) }
+    $mp = New-Object Windows.Controls.MenuItem; $mp.Header = T 'mSubsPick'; $mp.Add_Click({ Show-SubsDialog }); [void]$subsMenu.Items.Add($mp)
     $subsMenu.Header = T 'mSubs'
-    $subsMenu.Visibility = $(if ($any) { 'Visible' } else { 'Collapsed' })
+    $subsMenu.Visibility = 'Visible'
 }
 $menu.Add_Opened({ Build-SubsMenu })
 $win.Add_PreviewMouseRightButtonDown({ param($s, $e) $script:ctxSub = Find-SubTab $e.OriginalSource })
