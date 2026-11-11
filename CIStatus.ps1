@@ -1681,6 +1681,8 @@ function Build-SubsMenu {
 }
 $menu.Add_Opened({ Build-SubsMenu })
 $win.Add_PreviewMouseRightButtonDown({ param($s, $e) $script:ctxSub = Find-SubTab $e.OriginalSource })
+# The context menu is also asked for what is under the mouse when it opens (the sub-tab that was right-clicked)
+$win.Add_ContextMenuOpening({ param($s, $e) $script:ctxSub = Find-SubTab $e.OriginalSource })
 $budgetMenu = AddItem 'mBudgets' {}
 $budgetItems = @{}
 foreach ($bk in 'Actions', 'Packages', 'Git LFS', 'Codespaces', 'AI') {
