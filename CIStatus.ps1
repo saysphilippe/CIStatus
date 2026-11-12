@@ -169,8 +169,8 @@ $strings = @{
         cfAdded = 'Added: {0}'; cfAddFail = 'Could not add the account: {0}'; cfNoAccess = 'The token cannot see any Cloudflare account.'
         cfPerm = 'No access. Check the token permissions (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
         cfDeployed = 'deployed'; cfVia = 'via {0}'; cfNoDeploys = 'No Workers found'
-        linkUsageCf = 'Open Cloudflare dashboard ↗'; uCfHead = '{0} · today (UTC)'; uCfBars = 'Today against the Workers Free daily allowance'
-        uCfLag = 'Cloudflare analytics run a few minutes behind. The allowance resets at 00:00 UTC.'; uCfLoading = 'Reading Cloudflare…'
+        linkUsageCf = 'Open Cloudflare dashboard ↗'; uCfHead = '{0} · since {1}'; uCfBars = 'Today against the Workers Free daily allowance'
+        uCfLag = 'Cloudflare analytics run a few minutes behind. The allowance resets at {0}.'; uCfLoading = 'Reading Cloudflare…'
         cfWReq = 'Workers requests'; cfD1R = 'D1 rows read'; cfD1W = 'D1 rows written'; cfAi = 'Workers AI neurons'
         noGh = 'The GitHub CLI (gh) was not found. Install it and run: gh auth login'; ghErr = 'Could not read {0}: {1}'
     }
@@ -213,8 +213,8 @@ $strings = @{
         cfAdded = 'Lagt til: {0}'; cfAddFail = 'Kunne ikke legge til kontoen: {0}'; cfNoAccess = 'Tokenet ser ingen Cloudflare-konto.'
         cfPerm = 'Ingen tilgang. Sjekk rettighetene til tokenet (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
         cfDeployed = 'publisert'; cfVia = 'via {0}'; cfNoDeploys = 'Ingen Workers funnet'
-        linkUsageCf = 'Åpne Cloudflare-dashbordet ↗'; uCfHead = '{0} · i dag (UTC)'; uCfBars = 'I dag mot gratisgrensen per dag for Workers'
-        uCfLag = 'Cloudflare-statistikken går noen minutter etter. Grensen nullstilles kl. 00:00 UTC.'; uCfLoading = 'Leser fra Cloudflare…'
+        linkUsageCf = 'Åpne Cloudflare-dashbordet ↗'; uCfHead = '{0} · siden kl. {1}'; uCfBars = 'I dag mot gratisgrensen per dag for Workers'
+        uCfLag = 'Cloudflare-statistikken går noen minutter etter. Grensen nullstilles kl. {0}.'; uCfLoading = 'Leser fra Cloudflare…'
         cfWReq = 'Workers-kall'; cfD1R = 'D1 rader lest'; cfD1W = 'D1 rader skrevet'; cfAi = 'Workers AI-neuroner'
         noGh = 'GitHub CLI (gh) ble ikke funnet. Installer den og kjør: gh auth login'; ghErr = 'Kunne ikke lese {0}: {1}'
     }
@@ -257,8 +257,8 @@ $strings = @{
         cfAdded = 'Tillagt: {0}'; cfAddFail = 'Kunde inte lägga till kontot: {0}'; cfNoAccess = 'Token ser inget Cloudflare-konto.'
         cfPerm = 'Ingen åtkomst. Kontrollera behörigheterna för token (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
         cfDeployed = 'publicerad'; cfVia = 'via {0}'; cfNoDeploys = 'Inga Workers hittades'
-        linkUsageCf = 'Öppna Cloudflare-instrumentpanelen ↗'; uCfHead = '{0} · idag (UTC)'; uCfBars = 'Idag mot gratisgränsen per dag för Workers'
-        uCfLag = 'Cloudflares statistik ligger några minuter efter. Gränsen nollställs kl. 00:00 UTC.'; uCfLoading = 'Läser från Cloudflare…'
+        linkUsageCf = 'Öppna Cloudflare-instrumentpanelen ↗'; uCfHead = '{0} · sedan kl. {1}'; uCfBars = 'Idag mot gratisgränsen per dag för Workers'
+        uCfLag = 'Cloudflares statistik ligger några minuter efter. Gränsen nollställs kl. {0}.'; uCfLoading = 'Läser från Cloudflare…'
         cfWReq = 'Workers-anrop'; cfD1R = 'D1 rader lästa'; cfD1W = 'D1 rader skrivna'; cfAi = 'Workers AI-neuroner'
         noGh = 'GitHub CLI (gh) hittades inte. Installera den och kör: gh auth login'; ghErr = 'Kunde inte läsa {0}: {1}'
     }
@@ -301,8 +301,8 @@ $strings = @{
         cfAdded = 'Tilføjet: {0}'; cfAddFail = 'Kunne ikke tilføje kontoen: {0}'; cfNoAccess = 'Tokenet kan ikke se nogen Cloudflare-konto.'
         cfPerm = 'Ingen adgang. Kontroller tokenets rettigheder (Read: Workers Scripts, Workers Builds Configuration, Account Analytics, Account Settings).'
         cfDeployed = 'udgivet'; cfVia = 'via {0}'; cfNoDeploys = 'Ingen Workers fundet'
-        linkUsageCf = 'Åbn Cloudflare-dashboardet ↗'; uCfHead = '{0} · i dag (UTC)'; uCfBars = 'I dag mod gratisgrænsen pr. dag for Workers'
-        uCfLag = 'Cloudflares statistik er nogle minutter bagud. Grænsen nulstilles kl. 00:00 UTC.'; uCfLoading = 'Læser fra Cloudflare…'
+        linkUsageCf = 'Åbn Cloudflare-dashboardet ↗'; uCfHead = '{0} · siden kl. {1}'; uCfBars = 'I dag mod gratisgrænsen pr. dag for Workers'
+        uCfLag = 'Cloudflares statistik er nogle minutter bagud. Grænsen nulstilles kl. {0}.'; uCfLoading = 'Læser fra Cloudflare…'
         cfWReq = 'Workers-kald'; cfD1R = 'D1 rækker læst'; cfD1W = 'D1 rækker skrevet'; cfAi = 'Workers AI-neuroner'
         noGh = 'GitHub CLI (gh) blev ikke fundet. Installer den og kør: gh auth login'; ghErr = 'Kunne ikke læse {0}: {1}'
     }
@@ -688,7 +688,17 @@ function Add-Pick($r, $max) {
     $script:pickSeen[$id] = $true; [void]$script:pickList.Add($r); $true
 }
 
-# Daily usage per account from the GraphQL analytics API. The reference is the Workers Free daily allowance (resets 00:00 UTC);
+# Cloudflare's day starts at 00:00 UTC. Shown in the local time zone, e.g. "01:00 CET" (winter) or "02:00 CEST" (summer), since UTC means nothing to most readers.
+function Get-CfResetLocal {
+    $utc = [DateTime]::UtcNow.Date.AddDays(1)
+    $tz = [TimeZoneInfo]::Local
+    $loc = [TimeZoneInfo]::ConvertTimeFromUtc($utc, $tz)
+    $off = $tz.GetUtcOffset($utc).TotalHours
+    $name = if ($tz.BaseUtcOffset.TotalHours -eq 1) { if ($off -eq 1) { 'CET' } else { 'CEST' } } elseif ($off -eq 0) { 'UTC' } else { 'UTC' + $(if ($off -gt 0) { '+' } else { '' }) + $off }
+    '{0} {1}' -f $loc.ToString('HH:mm'), $name
+}
+
+# Daily usage per account from the GraphQL analytics API. The reference is the Workers Free daily allowance (resets 00:00 UTC, shown in local time);
 # limits from the Cloudflare docs (workers/platform/limits, workers/platform/pricing, workers-ai/platform/pricing), read 2026-11-06.
 $cfLimits = @(
     @{ k = 'req'; label = 'cfWReq'; limit = 100000.0 }, @{ k = 'd1r'; label = 'cfD1R'; limit = 5000000.0 },
@@ -863,7 +873,7 @@ function Render-CfUsage($a) {
     if ($u -and $u.err) { $el.uNote.Text = $u.err; $el.uNote.Foreground = Br $colors.fail; $el.uNote.Visibility = 'Visible' }
     $d = if ($u) { $u.data } else { $null }
     if (-not $d) { $el.uDailyHead.Text = $(if ($u -and $u.pending) { T 'uCfLoading' } else { '' }); $el.uOtherHead.Text = ''; return }
-    $el.uDailyHead.Text = (T 'uCfHead') -f $a.label
+    $el.uDailyHead.Text = (T 'uCfHead') -f $a.label, (Get-CfResetLocal)
     $el.uOtherHead.Text = T 'uCfBars'
     foreach ($m in $cfLimits) {
         $v = [double]$d[$m.k]; $pct = $v / $m.limit * 100
@@ -1199,7 +1209,7 @@ function Render {
         else { & $addMini $colors.queued (T 'nothing') }
     }
     $el.mini.ToolTip = T 'restore'; $el.minBtn.ToolTip = T 'minimize'
-    if ($cfg.tab -eq 'usage') { $uat = Get-UsageAt; $el.upd.Text = $(if ($uat) { ((T 'updated') -f $uat.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T $(if (Get-CfUsageAcct) { 'uCfLag' } else { 'uLag' })) }
+    if ($cfg.tab -eq 'usage') { $uat = Get-UsageAt; $el.upd.Text = $(if ($uat) { ((T 'updated') -f $uat.ToString('HH:mm:ss')) + ' · ' } else { '' }) + $(if (Get-CfUsageAcct) { (T 'uCfLag') -f (Get-CfResetLocal) } else { T 'uLag' }) }
     else { $el.upd.Text = $(if ($script:updatedAt) { ((T 'updated') -f $script:updatedAt.ToString('HH:mm:ss')) + ' · ' } else { '' }) + (T 'hint') }
     if ($win.IsLoaded) { Keep-OnScreen }   # the content may have grown or shrunk: back to the anchor
 }
